@@ -1,9 +1,9 @@
-@startuml Spring Boot Servlet Web Application Startup Process
+@startuml Spring Boot 应用启动过程（Servlet版本）
 
 ' PlantUML 序列图参考: https://plantuml.com/zh/sequence-diagram
 ' org.springframework.boot:spring-boot-starter-parent:3.4.4
 
-title Spring Boot Servlet Web Application Startup Process
+title Spring Boot 应用启动过程（Servlet版本）
 
 !theme plain
 

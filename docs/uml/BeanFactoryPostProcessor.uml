@@ -3,27 +3,65 @@
   <ID>JAVA</ID>
   <OriginalElement>org.springframework.beans.factory.config.BeanFactoryPostProcessor</OriginalElement>
   <nodes>
-    <node x="-58.5" y="163.0">org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor</node>
-    <node x="-56.5" y="59.0">org.springframework.beans.factory.config.BeanFactoryPostProcessor</node>
-    <node x="-154.0" y="290.0">org.springframework.context.annotation.ConfigurationClassPostProcessor</node>
+    <node x="1454.0" y="1113.5">org.springframework.context.annotation.ConfigurationClassPostProcessor.PropertySourcesAotContribution</node>
+    <node x="1310.0" y="168.0">org.springframework.context.support.PropertySourcesPlaceholderConfigurer</node>
+    <node x="871.0" y="273.0">org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor</node>
+    <node x="822.5" y="1148.0">org.springframework.context.annotation.ConfigurationClassPostProcessor.ConfigurationClassProxyBeanRegistrationCodeFragments</node>
+    <node x="1115.5" y="64.0">org.springframework.beans.factory.config.BeanFactoryPostProcessor</node>
+    <node x="-257.5" y="1159.5">org.springframework.context.annotation.ConfigurationClassPostProcessor.ImportAwareBeanPostProcessor</node>
+    <node x="775.5" y="505.0">org.springframework.context.annotation.ConfigurationClassPostProcessor</node>
+    <node x="252.0" y="1136.5">org.springframework.context.annotation.ConfigurationClassPostProcessor.ImportAwareAotContribution</node>
   </nodes>
   <notes />
   <edges>
     <edge source="org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor" target="org.springframework.beans.factory.config.BeanFactoryPostProcessor" relationship="INTERFACE_GENERALIZATION">
-      <point x="0.0" y="-38.5" />
-      <point x="0.0" y="27.0" />
+      <point x="2.8421709430404007E-14" y="-38.5" />
+      <point x="1080.5" y="143.0" />
+      <point x="1219.25" y="143.0" />
+      <point x="-103.75" y="27.0" />
+    </edge>
+    <edge source="org.springframework.context.annotation.ConfigurationClassPostProcessor.ImportAwareAotContribution" target="org.springframework.context.annotation.ConfigurationClassPostProcessor" relationship="INNER_CLASS">
+      <point x="-0.0" y="-73.5" />
+      <point x="480.5" y="1113.0" />
+      <point x="1080.5" y="1113.0" />
+      <point x="-0.0" y="293.0" />
     </edge>
     <edge source="org.springframework.context.annotation.ConfigurationClassPostProcessor" target="org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor" relationship="REALIZATION">
-      <point x="0.0" y="-199.5" />
+      <point x="0.0" y="-293.0" />
       <point x="0.0" y="38.5" />
     </edge>
+    <edge source="org.springframework.context.support.PropertySourcesPlaceholderConfigurer" target="org.springframework.beans.factory.config.BeanFactoryPostProcessor" relationship="REALIZATION">
+      <point x="0.0" y="-143.5" />
+      <point x="1565.5" y="143.0" />
+      <point x="1426.75" y="143.0" />
+      <point x="103.75" y="27.0" />
+    </edge>
+    <edge source="org.springframework.context.annotation.ConfigurationClassPostProcessor.ConfigurationClassProxyBeanRegistrationCodeFragments" target="org.springframework.context.annotation.ConfigurationClassPostProcessor" relationship="INNER_CLASS">
+      <point x="-0.0" y="-62.0" />
+      <point x="-0.0" y="293.0" />
+    </edge>
+    <edge source="org.springframework.context.annotation.ConfigurationClassPostProcessor.ImportAwareBeanPostProcessor" target="org.springframework.context.annotation.ConfigurationClassPostProcessor" relationship="INNER_CLASS">
+      <point x="-0.0" y="-50.5" />
+      <point x="-32.5" y="1113.0" />
+      <point x="1080.5" y="1113.0" />
+      <point x="-0.0" y="293.0" />
+    </edge>
+    <edge source="org.springframework.context.annotation.ConfigurationClassPostProcessor.PropertySourcesAotContribution" target="org.springframework.context.annotation.ConfigurationClassPostProcessor" relationship="INNER_CLASS">
+      <point x="-242.5" y="-0.0" />
+      <point x="1356.0" y="1210.0" />
+      <point x="1356.0" y="1113.0" />
+      <point x="1080.5" y="1113.0" />
+      <point x="-0.0" y="293.0" />
+    </edge>
   </edges>
-  <settings layout="Hierarchic" zoom="1.0723076923076924" showDependencies="false" x="161.0" y="383.6628407460545" />
-  <SelectedNodes>
-    <node>org.springframework.context.annotation.ConfigurationClassPostProcessor</node>
-  </SelectedNodes>
+  <settings layout="Hierarchic" zoom="0.548062015503876" showDependencies="false" x="736.0" y="709.0" />
+  <SelectedNodes />
   <Categories>
+    <Category>Constructors</Category>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
     <Category>Methods</Category>
+    <Category>Properties</Category>
   </Categories>
   <SCOPE>All</SCOPE>
   <VISIBILITY>private</VISIBILITY>
