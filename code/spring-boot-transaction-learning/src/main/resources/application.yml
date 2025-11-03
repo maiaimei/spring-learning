@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: ${db_url} # jdbc:mysql://localhost:3306/your_database?useSSL=false&serverTimezone=UTC&characterEncoding=utf8
+    username: ${db_username} # your_username
+    password: ${db_password} # your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+
+logging:
+  level:
+    org.springframework.aop: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.springframework.transaction: DEBUG
+    org.apache.ibatis: DEBUG
+    org.mybatis: DEBUG
+    org.example.common.repository: DEBUG

@@ -1,0 +1,59 @@
+@startuml Spring Boot 3.4.4 事务拦截器注册流程
+
+' https://plantuml.com/zh/sequence-diagram
+
+title Spring Boot 3.4.4 事务拦截器注册流程
+
+participant "SpringBoot应用" as app
+participant TransactionAutoConfiguration
+participant EnableTransactionManagementConfiguration
+participant ProxyTransactionManagementConfiguration
+participant BeanFactory
+participant BeanFactoryTransactionAttributeSourceAdvisor
+participant TransactionInterceptor
+participant AnnotationTransactionAttributeSource
+
+app -> TransactionAutoConfiguration: 启动时自动加载
+activate TransactionAutoConfiguration
+
+TransactionAutoConfiguration -> EnableTransactionManagementConfiguration: 扫描内部配置类
+activate EnableTransactionManagementConfiguration
+
+EnableTransactionManagementConfiguration -> ProxyTransactionManagementConfiguration: @EnableTransactionManagement生效
+activate ProxyTransactionManagementConfiguration
+
+ProxyTransactionManagementConfiguration -> ProxyTransactionManagementConfiguration: 初始化事务组件
+ProxyTransactionManagementConfiguration -> BeanFactoryTransactionAttributeSourceAdvisor: 创建BeanFactoryTransactionAttributeSourceAdvisor
+activate BeanFactoryTransactionAttributeSourceAdvisor
+
+ProxyTransactionManagementConfiguration -> TransactionInterceptor: 创建TransactionInterceptor实例
+activate TransactionInterceptor
+
+ProxyTransactionManagementConfiguration -> AnnotationTransactionAttributeSource: 创建AnnotationTransactionAttributeSource
+activate AnnotationTransactionAttributeSource
+
+TransactionInterceptor -> TransactionInterceptor: 设置事务属性源
+TransactionInterceptor -> TransactionInterceptor: 配置事务管理器
+
+BeanFactoryTransactionAttributeSourceAdvisor -> BeanFactoryTransactionAttributeSourceAdvisor: 设置TransactionInterceptor\n作为通知(Advice)
+BeanFactoryTransactionAttributeSourceAdvisor -> BeanFactoryTransactionAttributeSourceAdvisor: 配置TransactionAttributeSourcePointcut
+
+ProxyTransactionManagementConfiguration -> BeanFactory: 注册BeanDefinition
+activate BeanFactory
+
+BeanFactory -> BeanFactory: 创建代理对象
+BeanFactory -> BeanFactory: 将TransactionInterceptor\n注入拦截器链
+
+BeanFactory --> ProxyTransactionManagementConfiguration: 注册完成
+deactivate BeanFactory
+
+ProxyTransactionManagementConfiguration --> EnableTransactionManagementConfiguration: 配置生效
+deactivate ProxyTransactionManagementConfiguration
+
+EnableTransactionManagementConfiguration --> TransactionAutoConfiguration: 完成事务基础设施
+deactivate EnableTransactionManagementConfiguration
+
+TransactionAutoConfiguration --> app: 事务功能就绪
+deactivate TransactionAutoConfiguration
+
+@enduml
