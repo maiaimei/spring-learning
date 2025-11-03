@@ -1,8 +1,9 @@
-@startuml Spring Boot 3.4.4 应用启动流程
+@startuml Spring Boot Servlet Web Application Startup Process
 
 ' PlantUML 序列图参考: https://plantuml.com/zh/sequence-diagram
+' org.springframework.boot:spring-boot-starter-parent:3.4.4
 
-title Spring Boot 3.4.4 应用启动流程
+title Spring Boot Servlet Web Application Startup Process
 
 !theme plain
 
@@ -323,26 +324,20 @@ group 应用启动执行 run(args)
             
             ' 调用Bean工厂后处理器
             AbstractApplicationContext -> AbstractApplicationContext: invokeBeanFactoryPostProcessors(beanFactory)
-            activate ConfigurationClassPostProcessor
+            activate AbstractApplicationContext
             note right
-                执行BeanFactoryPostProcessor实例
-                最重要的是ConfigurationClassPostProcessor
-                处理@Configuration、@ComponentScan等注解
+            Instantiate and invoke all registered BeanDefinitionRegistryPostProcessors beans, respecting explicit order if given.
+            • Invoke BeanDefinitionRegistryPostProcessors first, if any.
+            • First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
+            • Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
+            • Finally, invoke all other BeanDefinitionRegistryPostProcessors until no further ones appear.
+            • Now, invoke the postProcessBeanFactory callback of all processors handled so far.
+            Instantiate and invoke all registered BeanFactoryPostProcessor beans, respecting explicit order if given.
+            • First, invoke the BeanFactoryPostProcessors that implement PriorityOrdered.
+            • Next, invoke the BeanFactoryPostProcessors that implement Ordered.
+            • Finally, invoke all other BeanFactoryPostProcessors.
             end note
-            
-                ConfigurationClassPostProcessor -> ConfigurationClassParser: parse(candidates)
-                activate ConfigurationClassParser
-                note right
-                    解析@Configuration类：
-                    • 处理@ComponentScan注解
-                    • 处理@Import注解
-                    • 处理@Bean方法
-                    • 处理@PropertySource注解
-                end note
-                ConfigurationClassParser --> ConfigurationClassPostProcessor:
-                deactivate ConfigurationClassParser
-                
-            deactivate ConfigurationClassPostProcessor
+            deactivate AbstractApplicationContext
             
             ' 注册Bean后处理器
             AbstractApplicationContext -> AbstractApplicationContext: registerBeanPostProcessors(beanFactory)
