@@ -29,17 +29,12 @@ participant WebServer
 ' 这是Spring Boot应用的标准启动方式
 ' ========================================
 Developer -> SpringApplication: run(primarySource, args)
-activate SpringApplication
-
 note over SpringApplication
-    静态方法调用：
-    new SpringApplication(primarySources).run(args)
+    静态方法调用：new SpringApplication(primarySources).run(args)
+    primarySources通常是@SpringBootApplication注解的主类
 end note
 
-note right of SpringApplication
-    primarySources通常是
-    @SpringBootApplication注解的主类
-end note
+activate SpringApplication
 
 ' ========================================
 ' 阶段1：SpringApplication实例构造
@@ -102,7 +97,6 @@ group 应用启动执行 run(args)
     ' 标志着Spring Boot应用开始启动
     ' ========================================
     SpringApplication -> SpringApplicationRunListeners: starting()
-    activate SpringApplicationRunListeners
     note right
         通知所有注册的SpringApplicationRunListener
         实例应用启动开始
@@ -111,6 +105,7 @@ group 应用启动执行 run(args)
         上下文等均未初始化，适合在最早期
         进行准备工作
     end note
+    activate SpringApplicationRunListeners
     SpringApplicationRunListeners --> SpringApplication:
     deactivate SpringApplicationRunListeners
 
@@ -119,26 +114,25 @@ group 应用启动执行 run(args)
     ' 创建和配置ConfigurableEnvironment实例
     ' ========================================
     SpringApplication -> SpringApplication: prepareEnvironment()
-    activate SpringApplication
     note right
         Spring Boot启动过程中负责创建和
         配置应用环境的核心方法
     end note
+    activate SpringApplication
     
         SpringApplication -> SpringApplication: getOrCreateEnvironment()
         activate SpringApplication
-        
-        SpringApplication -> DefaultApplicationContextFactory: createEnvironment()
-        activate DefaultApplicationContextFactory
-        note right
-            根据webApplicationType创建对应的
-            Environment实现：
-            • StandardServletEnvironment
-            • StandardReactiveEnvironment
-            • StandardEnvironment
-        end note
-        DefaultApplicationContextFactory --> SpringApplication: ConfigurableEnvironment
-        deactivate DefaultApplicationContextFactory
+            SpringApplication -> DefaultApplicationContextFactory: createEnvironment()
+            note right
+                根据webApplicationType创建对应的
+                Environment实现：
+                • StandardServletEnvironment
+                • StandardReactiveEnvironment
+                • StandardEnvironment
+            end note
+            activate DefaultApplicationContextFactory
+            DefaultApplicationContextFactory --> SpringApplication: ConfigurableEnvironment
+            deactivate DefaultApplicationContextFactory
         deactivate SpringApplication
         
         SpringApplication -> SpringApplication: configureEnvironment()
@@ -158,7 +152,6 @@ group 应用启动执行 run(args)
         end note
         
         SpringApplication -> SpringApplicationRunListeners: environmentPrepared()
-        activate SpringApplicationRunListeners
         note right
             通知监听器Environment已准备好
             可用于修改环境属性
@@ -167,6 +160,7 @@ group 应用启动执行 run(args)
             尚未创建时触发，可用于对环境
             进行自定义修改
         end note
+        activate SpringApplicationRunListeners
         SpringApplicationRunListeners --> SpringApplication:
         deactivate SpringApplicationRunListeners
     deactivate SpringApplication
@@ -186,7 +180,6 @@ group 应用启动执行 run(args)
     activate SpringApplication
     
         SpringApplication -> DefaultApplicationContextFactory: create(webApplicationType)
-        activate DefaultApplicationContextFactory
         note right
             根据webApplicationType创建对应的
             ApplicationContext实现：
@@ -194,17 +187,16 @@ group 应用启动执行 run(args)
             • REACTIVE: AnnotationConfigReactiveWebServerApplicationContext
             • NONE: AnnotationConfigApplicationContext
         end note
-
-        DefaultApplicationContextFactory -> AnnotationConfigServletWebServerApplicationContext: new()
+        activate DefaultApplicationContextFactory
+        DefaultApplicationContextFactory -> AnnotationConfigServletWebServerApplicationContext: new()        
         activate AnnotationConfigServletWebServerApplicationContext
-        note right
-            创建AnnotationConfigServletWebServerApplicationContext
-            实例，适用于SERVLET类型的Web应用
-        end note
+            note right
+                创建AnnotationConfigServletWebServerApplicationContext
+                实例，适用于SERVLET类型的Web应用
+            end note
 
-        ' 注册注解Bean定义读取器
-        AnnotationConfigServletWebServerApplicationContext -> AnnotatedBeanDefinitionReader: new AnnotatedBeanDefinitionReader(this)
-        activate AnnotatedBeanDefinitionReader
+            ' 注册注解Bean定义读取器
+            AnnotationConfigServletWebServerApplicationContext -> AnnotatedBeanDefinitionReader: new AnnotatedBeanDefinitionReader(this)
             note right
                 调用AnnotationConfigUtils: registerAnnotationConfigProcessors()方法
                 注册后处理器：
@@ -216,16 +208,16 @@ group 应用启动执行 run(args)
                 • EventListenerMethodProcessor: 处理@EventListener注解
                 • DefaultEventListenerFactory: 事件监听器工厂
             end note
-        AnnotatedBeanDefinitionReader --> AnnotationConfigServletWebServerApplicationContext:
-        deactivate AnnotatedBeanDefinitionReader
+            activate AnnotatedBeanDefinitionReader
+            AnnotatedBeanDefinitionReader --> AnnotationConfigServletWebServerApplicationContext:
+            deactivate AnnotatedBeanDefinitionReader
 
-        ' 注册类路径扫描器
-        AnnotationConfigServletWebServerApplicationContext -> ClassPathBeanDefinitionScanner: new ClassPathBeanDefinitionScanner(this)
-        activate ClassPathBeanDefinitionScanner
-        ClassPathBeanDefinitionScanner --> AnnotationConfigServletWebServerApplicationContext:
-        deactivate ClassPathBeanDefinitionScanner
-            
-        AnnotationConfigServletWebServerApplicationContext --> DefaultApplicationContextFactory:
+            ' 注册类路径扫描器
+            AnnotationConfigServletWebServerApplicationContext -> ClassPathBeanDefinitionScanner: new ClassPathBeanDefinitionScanner(this)
+            activate ClassPathBeanDefinitionScanner
+            ClassPathBeanDefinitionScanner --> AnnotationConfigServletWebServerApplicationContext:
+            deactivate ClassPathBeanDefinitionScanner
+            AnnotationConfigServletWebServerApplicationContext --> DefaultApplicationContextFactory:
         deactivate AnnotationConfigServletWebServerApplicationContext
         
         DefaultApplicationContextFactory --> SpringApplication: ConfigurableApplicationContext
