@@ -1,8 +1,9 @@
-@startuml Spring Boot 声明式事务工作原理
+@startuml Spring Boot 声明式事务自动配置原理
 
-' https://plantuml.com/zh/sequence-diagram
+' PlantUML 序列图参考: https://plantuml.com/zh/sequence-diagram
+' org.springframework.boot:spring-boot-starter-parent:3.4.4
 
-title Spring Boot 声明式事务工作原理
+title Spring Boot 声明式事务自动配置原理
 
 participant "SpringBoot应用" as app
 participant TransactionAutoConfiguration
