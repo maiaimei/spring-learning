@@ -1,59 +1,63 @@
-@startuml Spring Boot 3.4.4 事务拦截器注册流程
+@startuml Spring Boot 声明式事务工作原理
 
 ' https://plantuml.com/zh/sequence-diagram
 
-title Spring Boot 3.4.4 事务拦截器注册流程
+title Spring Boot 声明式事务工作原理
 
 participant "SpringBoot应用" as app
 participant TransactionAutoConfiguration
 participant EnableTransactionManagementConfiguration
+participant CglibAutoProxyConfiguration
+participant TransactionManagementConfigurationSelector
 participant ProxyTransactionManagementConfiguration
-participant BeanFactory
-participant BeanFactoryTransactionAttributeSourceAdvisor
 participant TransactionInterceptor
-participant AnnotationTransactionAttributeSource
 
 app -> TransactionAutoConfiguration: 启动时自动加载
 activate TransactionAutoConfiguration
+note right
+自动配置类原理
+@SpringBootApplication注解中包含@EnableAutoConfiguration
+@EnableAutoConfiguration导入AutoConfigurationImportSelector类
+AutoConfigurationImportSelector类扫描classpath下的META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports文件
+该文件列出了所有的自动配置类
+自动配置类注入到IOC容器中逻辑参考AbstractApplicationContext#invokeBeanFactoryPostProcessors
+end note
 
-TransactionAutoConfiguration -> EnableTransactionManagementConfiguration: 扫描内部配置类
-activate EnableTransactionManagementConfiguration
+    TransactionAutoConfiguration -> EnableTransactionManagementConfiguration: 扫描内部配置类
+    activate EnableTransactionManagementConfiguration
 
-EnableTransactionManagementConfiguration -> ProxyTransactionManagementConfiguration: @EnableTransactionManagement生效
-activate ProxyTransactionManagementConfiguration
+        EnableTransactionManagementConfiguration -> CglibAutoProxyConfiguration: 扫描内部配置类
+        activate CglibAutoProxyConfiguration
+        note right
+        @EnableTransactionManagement生效
+        end note
 
-ProxyTransactionManagementConfiguration -> ProxyTransactionManagementConfiguration: 初始化事务组件
-ProxyTransactionManagementConfiguration -> BeanFactoryTransactionAttributeSourceAdvisor: 创建BeanFactoryTransactionAttributeSourceAdvisor
-activate BeanFactoryTransactionAttributeSourceAdvisor
+            CglibAutoProxyConfiguration -> TransactionManagementConfigurationSelector: 导入选择器
+            activate TransactionManagementConfigurationSelector
 
-ProxyTransactionManagementConfiguration -> TransactionInterceptor: 创建TransactionInterceptor实例
-activate TransactionInterceptor
+                TransactionManagementConfigurationSelector -> ProxyTransactionManagementConfiguration: 导入ProxyTransactionManagementConfiguration
+                activate ProxyTransactionManagementConfiguration
+                note right
+                ProxyTransactionManagementConfiguration及其父类AbstractTransactionManagementConfiguration完成事务基础设施的搭建
+                1.注册事务属性解析器AnnotationTransactionAttributeSource
+                2.注册事务管理器TransactionManager
+                3.注册事务通知TransactionInterceptor
+                4.注册事务增强器BeanFactoryTransactionAttributeSourceAdvisor
+                5.注册事务事件监听器工厂TransactionalEventListenerFactory
+                end note
+                ProxyTransactionManagementConfiguration --> TransactionManagementConfigurationSelector
+                deactivate ProxyTransactionManagementConfiguration
 
-ProxyTransactionManagementConfiguration -> AnnotationTransactionAttributeSource: 创建AnnotationTransactionAttributeSource
-activate AnnotationTransactionAttributeSource
+            TransactionManagementConfigurationSelector --> CglibAutoProxyConfiguration: 
+            deactivate TransactionManagementConfigurationSelector
 
-TransactionInterceptor -> TransactionInterceptor: 设置事务属性源
-TransactionInterceptor -> TransactionInterceptor: 配置事务管理器
+        CglibAutoProxyConfiguration --> EnableTransactionManagementConfiguration:
+        deactivate CglibAutoProxyConfiguration
 
-BeanFactoryTransactionAttributeSourceAdvisor -> BeanFactoryTransactionAttributeSourceAdvisor: 设置TransactionInterceptor\n作为通知(Advice)
-BeanFactoryTransactionAttributeSourceAdvisor -> BeanFactoryTransactionAttributeSourceAdvisor: 配置TransactionAttributeSourcePointcut
+    EnableTransactionManagementConfiguration --> TransactionAutoConfiguration:
+    deactivate EnableTransactionManagementConfiguration
 
-ProxyTransactionManagementConfiguration -> BeanFactory: 注册BeanDefinition
-activate BeanFactory
-
-BeanFactory -> BeanFactory: 创建代理对象
-BeanFactory -> BeanFactory: 将TransactionInterceptor\n注入拦截器链
-
-BeanFactory --> ProxyTransactionManagementConfiguration: 注册完成
-deactivate BeanFactory
-
-ProxyTransactionManagementConfiguration --> EnableTransactionManagementConfiguration: 配置生效
-deactivate ProxyTransactionManagementConfiguration
-
-EnableTransactionManagementConfiguration --> TransactionAutoConfiguration: 完成事务基础设施
-deactivate EnableTransactionManagementConfiguration
-
-TransactionAutoConfiguration --> app: 事务功能就绪
+TransactionAutoConfiguration --> app:
 deactivate TransactionAutoConfiguration
 
 @enduml
