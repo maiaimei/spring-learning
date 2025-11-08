@@ -21,7 +21,7 @@ class DataSourceConfigTest {
   private DataSource dataSource;
 
   @Test
-  void testConnection() throws SQLException {
+  void testDriverManagerDataSourceConnection() throws SQLException {
     final Connection connection = dataSource.getConnection();
     LOGGER.info("数据库连接：{}", connection);
   }

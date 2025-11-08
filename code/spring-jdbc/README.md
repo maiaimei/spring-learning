@@ -15,7 +15,7 @@
 
 使用方式：
 
-- 系统属性：`java -Ddb.username=myuser -Ddb.password=mypass MyApp`
+- 系统属性：`java -Ddb.url=jdbc:mysql://localhost:3306/spring_jdbc?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true -Ddb.username=root -Ddb.password= MyApp`
 
 - 环境变量：`export DB_USERNAME=myuser && export DB_PASSWORD=mypass`
 - IDEA环境变量：`DB_URL=jdbc:mysql://localhost:3306/spring_jdbc?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true;DB_USERNAME=root;DB_PASSWORD=`

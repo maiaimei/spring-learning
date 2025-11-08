@@ -1,16 +1,20 @@
 package org.example.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
-import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-@Configurable
+@Configuration
 public class DataSourceConfig {
 
-  @Bean
-  public DataSource dataSource() {
-    String dbUrl = "jdbc:mysql://localhost:3306/spring_jdbc?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true";
+  // @Bean
+  public DataSource driverManagerDataSource() {
+    String dbUrl = """
+        jdbc:mysql://localhost:3306/spring_jdbc?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true""";
     String dbUsername = "root";
     String dbPassword = "";
 
@@ -26,4 +30,36 @@ public class DataSourceConfig {
     return System.getProperty(systemProperty,
         System.getenv().getOrDefault(envVariable, defaultValue));
   }
+
+  @Autowired
+  private DatabaseProperties databaseProperties;
+
+  /**
+   * 用于解析@Value注解中的占位符，必须是静态方法，确保在其他Bean初始化前加载
+   */
+  @Bean
+  public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+    return new PropertySourcesPlaceholderConfigurer();
+  }
+
+  @Bean
+  public DataSource hikariDataSource() {
+    HikariDataSource dataSource = new HikariDataSource();
+    dataSource.setDriverClassName(databaseProperties.getDriverClassName());
+    dataSource.setJdbcUrl(databaseProperties.getUrl());
+    dataSource.setUsername(databaseProperties.getUsername());
+    dataSource.setPassword(databaseProperties.getPassword());
+    dataSource.setPoolName(databaseProperties.getPoolName());
+    dataSource.setConnectionTimeout(databaseProperties.getConnectionTimeout());
+    dataSource.setIdleTimeout(databaseProperties.getIdleTimeout());
+    dataSource.setMaxLifetime(databaseProperties.getMaxLifetime());
+    dataSource.setMaximumPoolSize(databaseProperties.getMaximumPoolSize());
+    dataSource.setMinimumIdle(databaseProperties.getMinimumIdle());
+    dataSource.setConnectionTestQuery(databaseProperties.getConnectionTestQuery());
+    dataSource.setAutoCommit(databaseProperties.isAutoCommit());
+    dataSource.setConnectionInitSql(databaseProperties.getConnectionInitSql());
+    dataSource.setLeakDetectionThreshold(databaseProperties.getLeakDetectionThreshold());
+    return dataSource;
+  }
+
 }

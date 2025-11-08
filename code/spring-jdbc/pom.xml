@@ -87,6 +87,12 @@
       <version>8.0.33</version>
     </dependency>
 
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>5.1.0</version>
+    </dependency>
+
     <!-- Logback: 日志框架 -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -101,7 +107,7 @@
       <version>5.11.4</version>
       <scope>test</scope>
     </dependency>
-    
+
     <!-- Spring Test: Spring测试支持 (@ContextConfiguration等) -->
     <dependency>
       <groupId>org.springframework</groupId>
