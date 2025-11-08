@@ -22,7 +22,10 @@ class DataSourceConfigTest {
 
   @Test
   void testConnection() throws SQLException {
+    LOGGER.info("DataSource类型：{}", dataSource.getClass().getName());
     final Connection connection = dataSource.getConnection();
     LOGGER.info("数据库连接：{}", connection);
+    connection.close();
+    LOGGER.info("连接已关闭");
   }
 }
