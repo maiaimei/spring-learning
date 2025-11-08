@@ -203,6 +203,29 @@ try {
 
 # Spring事务基础
 
+Spring事务是对已有JDBC事务的进一步的包装型处理，所以底层依然是JDBC事务控制。
+
+![](./images/Spring-Transaction-20251108-112825.png)
+
+核心事务接口：
+
+```java
+public interface PlatformTransactionManager extends TransactionManager {
+
+	TransactionStatus getTransaction(TransactionDefinition definition) throws TransactionException;
+
+	void commit(TransactionStatus status) throws TransactionException;
+
+	void rollback(TransactionStatus status) throws TransactionException;
+}
+```
+
+事务处理架构：
+
+![](./images/Spring-Transaction-20251108-114102.png)
+
+![](./images/Spring-Transaction-20251108-114547.png)
+
 **`spring-tx`** JAR 提供Spring事务管理的核心功能：
 
 - **声明式事务管理** - 使用 `@Transactional` 注解
@@ -222,8 +245,6 @@ Maven依赖：
 ```
 
 **注意**：使用Spring Boot时，该依赖通常通过 `spring-boot-starter-jdbc`、`spring-boot-starter-data-jpa` 等starter自动包含。
-
-[https://docs.spring.io/spring-framework/reference/data-access/transaction.html](https://docs.spring.io/spring-framework/reference/data-access/transaction.html)
 
 # Spring声明式事务
 
@@ -791,3 +812,14 @@ public class ProgrammaticTransactionService {
     }
 }
 ```
+
+# 相关连接
+
+[Transaction Management](https://docs.spring.io/spring-framework/reference/data-access/transaction.html)
+
+[Understanding the Spring Framework Transaction Abstraction](https://docs.spring.io/spring-framework/reference/data-access/transaction/strategies.html)
+
+[Spring JDBC事务隔离级别【Spring开发实战】，李兴华原创Java教程](https://www.bilibili.com/video/BV19f42197MZ?spm_id_from=333.1387.favlist.content.click)
+
+[Spring事务处理架构【Spring开发实战】，李兴华原创Java教程](https://www.bilibili.com/video/BV1yz42127Zo?spm_id_from=333.1387.favlist.content.click)
+
