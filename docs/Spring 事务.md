@@ -14,6 +14,10 @@ JDBC是Java DataBase Connectivity的缩写，它是Java程序访问数据库的�
 | ![](./images/JDBC-20251108-095836.png) | **接口与实现**：JDBC接口定义标准规范，各数据库厂商实现这些接口来提供具体的驱动程序。JDBC接口规范在Java的标准库java.sql里。 |
 | ![](./images/JDBC-20251108-100017.png) | **实际应用**：Java程序只需引入对应的JDBC驱动jar包，就能通过统一的JDBC接口访问不同的数据库。 |
 
+![](./images/JDBC-20251108-130630.png)
+
+![](./images/JDBC-20251108-130738.png)
+
 数据库操作代码：
 
 ```java
@@ -132,22 +136,76 @@ try (Connection conn = ds.getConnection()) { // 在此获取连接
 JDBC的事务代码：
 
 ```java
-Connection conn = openConnection();
-try {
-    // 关闭自动提交，默认有“隐式事务”，总是处于“自动提交”模式，也就是每执行一条SQL都是作为事务自动执行的。
+// JDBC连接配置
+String JDBC_URL = "jdbc:mysql://localhost:3306/test";
+String JDBC_USERNAME = "username";
+String JDBC_PASSWORD = "password";
+
+// 获取连接并执行数据库操作
+try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USERNAME, JDBC_PASSWORD)) {
+    
+    // 开启事务，关闭自动提交，默认有“隐式事务”，总是处于“自动提交”模式，也就是每执行一条SQL都是作为事务自动执行的。
     conn.setAutoCommit(false);
     // 设定隔离级别，如果没有设定隔离级别，会使用数据库的默认隔离级别。
     conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-    // 执行多条SQL语句
-    insert(); update(); delete();
-    // 提交事务
-    conn.commit();
-} catch (SQLException e) {
-    // 回滚事务
-    conn.rollback();
-} finally {
-    conn.setAutoCommit(true);
-    conn.close();
+    
+    try {
+        // 查询
+        try (PreparedStatement ps = conn.prepareStatement("SELECT id, grade, name, gender FROM students WHERE gender=? AND grade=?")) {
+            ps.setObject(1, "M");
+            ps.setObject(2, 3);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    long grade = rs.getLong(2);
+                    String name = rs.getString(3);
+                    String gender = rs.getString(4);
+                }
+            }
+        }
+        
+        // 插入
+        try (PreparedStatement ps = conn.prepareStatement("INSERT INTO students (id, grade, name, gender) VALUES (?,?,?,?)")) {
+            ps.setObject(1, 999);
+            ps.setObject(2, 1);
+            ps.setObject(3, "Bob");
+            ps.setObject(4, "M");
+            int n = ps.executeUpdate();
+        }
+        
+        // 更新
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE students SET name=? WHERE id=?")) {
+            ps.setObject(1, "Bob");
+            ps.setObject(2, 999);
+            int n = ps.executeUpdate();
+        }
+        
+        // 删除
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM students WHERE id=?")) {
+            ps.setObject(1, 999);
+            int n = ps.executeUpdate();
+        }
+        
+        // 批处理
+        try (PreparedStatement ps = conn.prepareStatement("INSERT INTO students (name, gender, grade, score) VALUES (?, ?, ?, ?)")) {
+            for (Student s : students) {
+                ps.setString(1, s.name);
+                ps.setBoolean(2, s.gender);
+                ps.setInt(3, s.grade);
+                ps.setInt(4, s.score);
+                ps.addBatch();
+            }
+            int[] ns = ps.executeBatch();
+        }
+        
+        // 提交事务
+        conn.commit();
+        
+    } catch (SQLException e) {
+        // 回滚事务
+        conn.rollback();
+        throw e;
+    }
 }
 ```
 
@@ -304,61 +362,19 @@ public void method2() { }
 
 **事务传播机制核心在于控制事务的边界和多个事务方法之间的协作关系。**例如，当方法A（已开启事务）调用方法B（也需要事务管理）时，方法B是继续使用A的事务，还是自己新开一个事务，或是其他处理方式。
 
-#### Propagation 枚举值
-
 |      | 传播行为          | 说明                                                         | 使用场景               |
 | ---- | ----------------- | ------------------------------------------------------------ | ---------------------- |
 | 1    | **REQUIRED**      | Support a current transaction, create a new one if none exists. This is the default setting of a transaction annotation.<br />默认值。如果当前没有事务，就新建一个事务；如果已经存在事务，则加入该事务。 | 大多数业务方法         |
-| 2    | **REQUIRES_NEW**  | Create a new transaction, and suspend the current transaction if one exists. <br />总是新建事务，如果当前存在事务，就把当前事务挂起。 | 独立的日志记录、审计   |
-| 3    | **SUPPORTS**      | Support a current transaction, execute non-transactionally if none exists. <br />支持当前事务，如果当前没有事务，就以非事务方式执行。 | 查询方法               |
-| 4    | **NOT_SUPPORTED** | Execute non-transactionally, suspend the current transaction if one exists. <br />以非事务方式执行，如果当前存在事务，就把当前事务挂起。 | 不需要事务的操作       |
-| 5    | **MANDATORY**     | Support a current transaction, throw an exception if none exists. <br />使用当前的事务，如果当前没有事务，就抛出异常。 | 强制事务上下文的方法   |
+| 2    | **REQUIRES_NEW**  | Create a new transaction, and suspend the current transaction if one exists. <br />总是新建一个新的子业务事务，如果存在有父级事务则会自动将其挂起，该操作可以实现子事务的独立提交，不受调用者的事务影响，即便父级事务异常，也可以正常提交。<br/>简单理解：子业务自己拥有独立的事务，即便父事务出现了问题，也不影响子业务的处理。 | 独立的日志记录、审计   |
+| 3    | **SUPPORTS**      | Support a current transaction, execute non-transactionally if none exists. <br />如果当前父业务存在有事务，则加入该父级事务。如果当前不存在有父级事务，则以非事务方式运行。<br/>简化的理解：如果现在有事务支持就使用事务的处理方式，如果没有事务的支持，那么就采用事务裸奔的方式运行。 | 查询方法               |
+| 4    | **NOT_SUPPORTED** | Execute non-transactionally, suspend the current transaction if one exists. <br />以非事务的方式运行，如果当前存在有父级事务，则先自动挂起父级事务后运行。<br/>简化理解：在进行其他业务调用的时候，不管是否存在有事务统一关闭。 | 不需要事务的操作       |
+| 5    | **MANDATORY**     | Support a current transaction, throw an exception if none exists. <br />如果当前存在父级事务，则运行在父级事务之中，如果当前无事务则抛出异常。<br/>简化理解：必须存在有父级事务 | 强制事务上下文的方法   |
 | 6    | **NEVER**         | Execute non-transactionally, throw an exception if a transaction exists. <br />以非事务方式执行，如果当前存在事务，则抛出异常。 | 绝对不能在事务中的操作 |
-| 7    | **NESTED**        | Execute within a nested transaction if a current transaction exists, behave like REQUIRED otherwise.<br />如果当前存在事务，则在嵌套事务内执行；如果当前没有事务，等同于REQUIRED | 部分回滚场景           |
-
-#### 示例代码
-
-```java
-@Service
-public class OrderService {
-    
-    @Transactional  // REQUIRED（默认）
-    public void createOrder(Order order) {
-        orderRepository.save(order);
-        // 调用其他事务方法
-        auditService.logOrderCreation(order);
-        inventoryService.updateStock(order);
-    }
-}
-
-@Service
-public class AuditService {
-    
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void logOrderCreation(Order order) {
-        // 独立事务，即使主事务回滚，日志也会保存
-        auditRepository.save(new AuditLog(order));
-    }
-}
-
-@Service
-public class InventoryService {
-    
-    @Transactional(propagation = Propagation.NESTED)
-    public void updateStock(Order order) {
-        // 嵌套事务，可以独立回滚
-        for (OrderItem item : order.getItems()) {
-            stockRepository.decreaseStock(item.getProductId(), item.getQuantity());
-        }
-    }
-}
-```
+| 7    | **NESTED**        | Execute within a nested transaction if a current transaction exists, behave like REQUIRED otherwise.<br />如果当前存在父级事务，则当前子业务中的事务会自动成为该父级事务中的一个子事务，只有在父级事务提交后才会提交子事务。如果子事务产生异常则可以交由父级调用进行异常处理，如果父级事务产生异常，则其也会回滚。<br />简化理解：所有的事务统一交给调用业务处处理。<br />如果当前没有事务，等同于REQUIRED。 | 部分回滚场景           |
 
 ### 事务隔离级别
 
 **事务隔离级别是在并发环境访问下才会存在的问题。**在实际项目开发中，很可能有两个或多个不同的线程，每个线程拥有各自的数据库事务，要进行同一条数据的更新操作。为了保证数据在更新时候的正确性，那么就需要对数据的同步进行有效的管理，这就属于数据库隔离级别的概念了。
-
-#### Isolation 枚举值
 
 | 隔离级别             | 说明                   | 解决的问题             | 可能出现的问题         |
 | -------------------- | ---------------------- | ---------------------- | ---------------------- |
@@ -367,40 +383,6 @@ public class InventoryService {
 | **READ_COMMITTED**   | 读已提交               | 脏读                   | 不可重复读、幻读       |
 | **REPEATABLE_READ**  | 可重复读               | 脏读、不可重复读       | 幻读                   |
 | **SERIALIZABLE**     | 串行化                 | 脏读、不可重复读、幻读 | 性能最低               |
-
-#### 示例代码
-
-```java
-@Service
-public class AccountService {
-    
-    // 防止脏读
-    @Transactional(isolation = Isolation.READ_COMMITTED)
-    public BigDecimal getBalance(Long accountId) {
-        return accountRepository.findById(accountId).getBalance();
-    }
-    
-    // 防止不可重复读
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public void transferMoney(Long fromId, Long toId, BigDecimal amount) {
-        Account from = accountRepository.findById(fromId);
-        Account to = accountRepository.findById(toId);
-        
-        // 在事务期间，账户余额不会被其他事务修改
-        from.setBalance(from.getBalance().subtract(amount));
-        to.setBalance(to.getBalance().add(amount));
-        
-        accountRepository.save(from);
-        accountRepository.save(to);
-    }
-    
-    // 最高隔离级别
-    @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void criticalOperation() {
-        // 完全串行化执行，避免所有并发问题
-    }
-}
-```
 
 ### 超时设置
 
@@ -818,8 +800,3 @@ public class ProgrammaticTransactionService {
 [Transaction Management](https://docs.spring.io/spring-framework/reference/data-access/transaction.html)
 
 [Understanding the Spring Framework Transaction Abstraction](https://docs.spring.io/spring-framework/reference/data-access/transaction/strategies.html)
-
-[Spring JDBC事务隔离级别【Spring开发实战】，李兴华原创Java教程](https://www.bilibili.com/video/BV19f42197MZ?spm_id_from=333.1387.favlist.content.click)
-
-[Spring事务处理架构【Spring开发实战】，李兴华原创Java教程](https://www.bilibili.com/video/BV1yz42127Zo?spm_id_from=333.1387.favlist.content.click)
-
