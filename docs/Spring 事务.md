@@ -1,5 +1,25 @@
 # 事务管理基础
 
+所有Java数据库操作最终都要通过JDBC来实现。
+
+## 什么是JDBC？
+
+JDBC是Java DataBase Connectivity的缩写，它是Java程序访问数据库的标准接口。
+
+使用Java程序访问数据库时，Java代码并不是直接通过TCP连接去访问数据库，而是通过JDBC接口来访问，而JDBC接口则通过JDBC驱动来实现真正对数据库的访问。
+
+|                                        |                                                              |
+| -------------------------------------- | ------------------------------------------------------------ |
+| ![](./images/JDBC-20251108-095623.png) | JDBC接口是Java标准库自带的，而具体的JDBC驱动是由数据库厂商提供的。 |
+| ![](./images/JDBC-20251108-095836.png) | Java标准库自带的JDBC接口其实就是定义了一组接口，而某个具体的JDBC驱动其实就是实现了这些接口的类。 |
+| ![](./images/JDBC-20251108-100017.png) |                                                              |
+
+例如，我们在Java代码中如果要访问MySQL，那么必须编写代码操作JDBC接口。注意到JDBC接口是Java标准库自带的，所以可以直接编译。而具体的JDBC驱动是由数据库厂商提供的，例如，MySQL的JDBC驱动由Oracle提供。因此，访问某个具体的数据库，我们只需要引入该厂商提供的JDBC驱动，就可以通过JDBC接口来访问，这样保证了Java程序编写的是一套数据库访问代码，却可以访问各种不同的数据库，因为他们都提供了标准的JDBC驱动：
+
+从代码来看，Java标准库自带的JDBC接口其实就是定义了一组接口，而某个具体的JDBC驱动其实就是实现了这些接口的类：
+
+实际上，一个MySQL的JDBC的驱动就是一个jar包，它本身也是纯Java编写的。我们自己编写的代码只需要引用Java标准库提供的java.sql包下面的相关接口，由此再间接地通过MySQL驱动的jar包通过网络访问MySQL服务器，所有复杂的网络通讯都被封装到JDBC驱动中，因此，Java程序本身只需要引入一个MySQL驱动的jar包就可以正常访问MySQL服务器：
+
 ## 什么是事务？
 
 简单来说，事务就是把多个数据库操作打包成一个整体，要么全部成功，要么全部失败。
@@ -8,17 +28,26 @@
 
 ## JDBC事务控制
 
-所有Java数据库操作最终都要通过JDBC来实现，JDBC提供了3个基本的事务控制方法：
+JDBC的事务代码：
 
 ```java
-// 1. 关闭自动提交（开启事务）
-connection.setAutoCommit(false);
-
-// 2. 手动提交事务
-connection.commit();
-
-// 3. 回滚事务
-connection.rollback();
+Connection conn = openConnection();
+try {
+    // 关闭自动提交，默认有“隐式事务”，总是处于“自动提交”模式，也就是每执行一条SQL都是作为事务自动执行的。
+    conn.setAutoCommit(false);
+    // 设定隔离级别，如果没有设定隔离级别，会使用数据库的默认隔离级别。
+    conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+    // 执行多条SQL语句
+    insert(); update(); delete();
+    // 提交事务
+    conn.commit();
+} catch (SQLException e) {
+    // 回滚事务
+    conn.rollback();
+} finally {
+    conn.setAutoCommit(true);
+    conn.close();
+}
 ```
 
 **什么时候需要事务？**
@@ -26,11 +55,13 @@ connection.rollback();
 只有当你需要同时执行多个相关的**数据库写操作**时，才需要使用事务。具体来说：
 
 **需要事务的场景（涉及写操作）：**
+
 - 转账（扣钱+加钱）- 两次UPDATE操作
 - 下单（减库存+创建订单+生成物流单）- 多次INSERT/UPDATE操作
 - 用户注册（创建用户+初始化账户+记录日志）- 多次INSERT操作
 
 **不需要事务的场景：**
+
 - 单纯的查询操作（SELECT）
 - 单个写操作（单次INSERT/UPDATE/DELETE）
 - 多个独立的读操作
@@ -40,23 +71,32 @@ connection.rollback();
 事务有4个重要特性，简称ACID：
 
 ### 1. 原子性（Atomicity）
+
 **要么全做，要么全不做**
+
 - 就像原子一样不可分割
 - 转账时，扣钱和加钱必须同时成功或同时失败
 - 出错时会回滚到事务开始前的状态
 
 ### 2. 一致性（Consistency）
+
 **数据始终保持正确状态**
-- 转账前后，总金额不变
+
+- 转账前后，从A账户扣钱 + 给B账户加钱，总金额不变
 - 不会出现数据不合理的情况
 
 ### 3. 隔离性（Isolation）
+
 **多个事务互不干扰**
+
+- 在并发环境访问下才会存在的问题
 - 就像每个事务都在独立的房间里执行
 - A用户转账时，不会被B用户的操作影响
 
 ### 4. 持久性（Durability）
+
 **提交后永久保存**
+
 - 事务完成后，数据会永久保存在数据库中
 - 即使系统崩溃，数据也不会丢失
 
@@ -82,6 +122,8 @@ Maven依赖：
 
 **注意**：使用Spring Boot时，该依赖通常通过 `spring-boot-starter-jdbc`、`spring-boot-starter-data-jpa` 等starter自动包含。
 
+[https://docs.spring.io/spring-framework/reference/data-access/transaction.html](https://docs.spring.io/spring-framework/reference/data-access/transaction.html)
+
 # Spring声明式事务
 
 **`@Transactional`** 是Spring框架提供的声明式事务管理注解，用于自动将方法或类包装在数据库事务中。
@@ -99,9 +141,9 @@ package org.springframework.transaction.annotation;
 public @interface Transactional {
     
     @AliasFor("transactionManager")
- 	String value() default "";
+  String value() default "";
     @AliasFor("value")
- 	String transactionManager() default "";  
+  String transactionManager() default "";  
     
     String[] label() default {}; 
     
@@ -385,7 +427,6 @@ public class Service {
 
 ## 注解工作原理
 
-
 `TransactionInterceptor`类的`invoke`方法是事务管理的核心。它会在方法执行前后进行拦截，创建事务上下文，根据方法上的`@Transactional`注解属性获取事务配置信息，如传播级别和异常信息。然后，它会检查是否已经存在一个事务上下文，根据传播级别决定是否需要创建新事务。如果需要，它会生成一个新的事务上下文对象`TransactionInfo`。接着，它会开启事务，获取数据库连接，关闭连接的自动提交，然后执行目标方法。如果方法执行过程中抛出异常，它会根据注解配置决定是否回滚事务。如果没有异常，它会提交事务。
 
 `TransactionInterceptor`类核心代码：
@@ -394,10 +435,10 @@ public class Service {
 public class TransactionInterceptor extends TransactionAspectSupport implements MethodInterceptor, Serializable {
 
     // Transaction interceptor entry point
-	public Object invoke(MethodInvocation invocation) throws Throwable {
-		Class<?> targetClass = (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis()) : null);
-		return invokeWithinTransaction(invocation.getMethod(), targetClass, invocation::proceed);
-	}
+ public Object invoke(MethodInvocation invocation) throws Throwable {
+  Class<?> targetClass = (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis()) : null);
+  return invokeWithinTransaction(invocation.getMethod(), targetClass, invocation::proceed);
+ }
 
 }
 ```
@@ -407,34 +448,34 @@ public class TransactionInterceptor extends TransactionAspectSupport implements 
 ```java
 public abstract class TransactionAspectSupport implements BeanFactoryAware, InitializingBean {
 
-	protected Object invokeWithinTransaction(Method method, @Nullable Class<?> targetClass,
-			final InvocationCallback invocation) throws Throwable {
+ protected Object invokeWithinTransaction(Method method, @Nullable Class<?> targetClass,
+   final InvocationCallback invocation) throws Throwable {
 
         // If the transaction attribute is null, the method is non-transactional.
-		TransactionAttributeSource tas = getTransactionAttributeSource();
+  TransactionAttributeSource tas = getTransactionAttributeSource();
         
         // Transaction attribute parsing
-		final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
+  final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
         
         // Determine the specific transaction manager to use for the given transaction.
-		final TransactionManager tm = determineTransactionManager(txAttr, targetClass);
+  final TransactionManager tm = determineTransactionManager(txAttr, targetClass);
         
-		// Start transaction
-		TransactionInfo txInfo = createTransactionIfNecessary(ptm, txAttr, joinpointIdentification);
+  // Start transaction
+  TransactionInfo txInfo = createTransactionIfNecessary(ptm, txAttr, joinpointIdentification);
 
-		Object retVal;
-		try {
-			// Invoke business method
-			retVal = invocation.proceedWithInvocation();
-		} catch (Throwable ex) {
-			// Rollback transaction
-			completeTransactionAfterThrowing(txInfo, ex);
-			throw ex;
-		}
-		// Commit transaction
-		commitTransactionAfterReturning(txInfo);
-		return retVal;
-	}
+  Object retVal;
+  try {
+   // Invoke business method
+   retVal = invocation.proceedWithInvocation();
+  } catch (Throwable ex) {
+   // Rollback transaction
+   completeTransactionAfterThrowing(txInfo, ex);
+   throw ex;
+  }
+  // Commit transaction
+  commitTransactionAfterReturning(txInfo);
+  return retVal;
+ }
 
 }
 ```
