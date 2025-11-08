@@ -11,8 +11,115 @@ JDBC是Java DataBase Connectivity的缩写，它是Java程序访问数据库的�
 | 图片 | 说明 |
 | ---- | ---- |
 | ![](./images/JDBC-20251108-095623.png) | **JDBC架构图**：Java程序通过JDBC接口访问不同数据库，JDBC接口由Java标准库提供，具体驱动由数据库厂商提供。 |
-| ![](./images/JDBC-20251108-095836.png) | **接口与实现**：JDBC接口定义标准规范，各数据库厂商实现这些接口来提供具体的驱动程序。 |
+| ![](./images/JDBC-20251108-095836.png) | **接口与实现**：JDBC接口定义标准规范，各数据库厂商实现这些接口来提供具体的驱动程序。JDBC接口规范在Java的标准库java.sql里。 |
 | ![](./images/JDBC-20251108-100017.png) | **实际应用**：Java程序只需引入对应的JDBC驱动jar包，就能通过统一的JDBC接口访问不同的数据库。 |
+
+数据库操作代码：
+
+```java
+// JDBC连接的URL, 不同数据库有不同的格式:
+String JDBC_URL = "jdbc:mysql://localhost:3306/test";
+String JDBC_USERNAME = "username";
+String JDBC_PASSWORD = "password";
+
+// DriverManager会自动扫描classpath，找到所有的JDBC驱动，然后根据我们传入的URL自动挑选一个合适的驱动。
+try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USERNAME, JDBC_PASSWORD)) {
+    
+    // 查询
+    try (PreparedStatement ps = conn.prepareStatement("SELECT id, grade, name, gender FROM students WHERE gender=? AND grade=?")) {
+        ps.setObject(1, "M"); // 注意：索引从1开始
+        ps.setObject(2, 3);
+        try (ResultSet rs = stmt.executeQuery("SELECT id, grade, name, gender FROM students WHERE gender=1")) {
+            while (rs.next()) {
+                long id = rs.getLong(1); // 注意：索引从1开始
+                long grade = rs.getLong(2);
+                String name = rs.getString(3);
+                int gender = rs.getInt(4);
+            }
+        }
+    } 
+    
+    // 插入
+    try (PreparedStatement ps = conn.prepareStatement(
+            "INSERT INTO students (id, grade, name, gender) VALUES (?,?,?,?)")) {
+        ps.setObject(1, 999); // 注意：索引从1开始
+        ps.setObject(2, 1); // grade
+        ps.setObject(3, "Bob"); // name
+        ps.setObject(4, "M"); // gender
+        int n = ps.executeUpdate(); // 1
+    }   
+    
+    // 更新
+    try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE students SET name=? WHERE id=?")) {
+            ps.setObject(1, "Bob"); // 注意：索引从1开始
+            ps.setObject(2, 999);
+            int n = ps.executeUpdate(); // 返回更新的行数
+        }
+    }   
+    
+    // 删除
+    try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM students WHERE id=?")) {
+            ps.setObject(1, 999); // 注意：索引从1开始
+            int n = ps.executeUpdate(); // 删除的行数
+        }
+    }    
+    
+    // 批处理
+    try (PreparedStatement ps = conn.prepareStatement("INSERT INTO students (name, gender, grade, score) VALUES (?, ?, ?, ?)")) {
+        // 对同一个PreparedStatement反复设置参数并调用addBatch():
+        for (Student s : students) {
+            ps.setString(1, s.name);
+            ps.setBoolean(2, s.gender);
+            ps.setInt(3, s.grade);
+            ps.setInt(4, s.score);
+            ps.addBatch(); // 添加到batch
+        }
+        // 执行batch:
+        int[] ns = ps.executeBatch();
+        for (int n : ns) {
+            System.out.println(n + " inserted."); // batch中每个SQL执行的结果数量
+        }
+    }    
+}
+```
+
+在执行JDBC的增删改查的操作时，如果每一次操作都来一次打开连接，操作，关闭连接，那么创建和销毁JDBC连接的开销就太大了。为了避免频繁地创建和销毁JDBC连接，我们可以通过连接池（Connection Pool）复用已经创建好的连接。
+
+JDBC连接池有一个标准的接口javax.sql.DataSource，注意这个类位于Java标准库中，但仅仅是接口。要使用JDBC连接池，我们必须选择一个JDBC连接池的实现。常用的JDBC连接池有：
+
+- HikariCP
+- C3P0
+- BoneCP
+- Druid
+
+目前使用最广泛的是HikariCP。我们以HikariCP为例，要使用JDBC连接池，先添加HikariCP的依赖如下：
+
+```xml
+<dependency>
+    <groupId>com.zaxxer</groupId>
+    <artifactId>HikariCP</artifactId>
+    <version>5.1.0</version>
+</dependency>
+```
+
+```java
+HikariConfig config = new HikariConfig();
+config.setJdbcUrl("jdbc:mysql://localhost:3306/test");
+config.setUsername("username");
+config.setPassword("password");
+config.addDataSourceProperty("connectionTimeout", "1000"); // 连接超时：1秒
+config.addDataSourceProperty("idleTimeout", "60000"); // 空闲超时：60秒
+config.addDataSourceProperty("maximumPoolSize", "10"); // 最大连接数：10
+
+// 创建一个DataSource实例，这个实例就是连接池：
+DataSource ds = new HikariDataSource(config);
+
+try (Connection conn = ds.getConnection()) { // 在此获取连接
+    ...
+} // 在此“关闭”连接
+```
 
 ## 什么是事务？
 
