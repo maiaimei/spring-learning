@@ -24,6 +24,12 @@
       <version>${spring.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context-support</artifactId>
+      <version>${spring.version}</version>
+    </dependency>
+
     <!-- Spring JDBC: Spring JDBC支持 -->
     <dependency>
       <groupId>org.springframework</groupId>
@@ -93,6 +99,14 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>5.11.4</version>
+      <scope>test</scope>
+    </dependency>
+    
+    <!-- Spring Test: Spring测试支持 (@ContextConfiguration等) -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>${spring.version}</version>
       <scope>test</scope>
     </dependency>
 
