@@ -1,9 +1,7 @@
 package org.example;
 
 import java.math.BigDecimal;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,9 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.*;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.test.context.ContextConfiguration;
@@ -37,17 +33,20 @@ class JdbcTemplateTest {
   }
 
   // RowMapper
-  private static final RowMapper<Book> BOOK_ROW_MAPPER = (rs, rowNum) -> {
-    Book book = new Book();
-    book.setId(rs.getLong("id"));
-    book.setTitle(rs.getString("title"));
-    book.setAuthor(rs.getString("author"));
-    book.setIsbn(rs.getString("isbn"));
-    book.setPrice(rs.getBigDecimal("price"));
-    book.setPublishDate(rs.getDate("publish_date").toLocalDate());
-    book.setCategory(rs.getString("category"));
-    book.setStock(rs.getInt("stock"));
-    return book;
+  private static final RowMapper<Book> BOOK_ROW_MAPPER = new RowMapper<Book>() {
+    @Override
+    public Book mapRow(ResultSet rs, int rowNum) throws SQLException {
+      Book book = new Book();
+      book.setId(rs.getLong("id"));
+      book.setTitle(rs.getString("title"));
+      book.setAuthor(rs.getString("author"));
+      book.setIsbn(rs.getString("isbn"));
+      book.setPrice(rs.getBigDecimal("price"));
+      book.setPublishDate(rs.getDate("publish_date").toLocalDate());
+      book.setCategory(rs.getString("category"));
+      book.setStock(rs.getInt("stock"));
+      return book;
+    }
   };
 
   @Test
@@ -177,16 +176,19 @@ class JdbcTemplateTest {
 
     KeyHolder keyHolder = new GeneratedKeyHolder();
 
-    int rows = jdbcTemplate.update(con -> {
-      PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-      ps.setString(1, "获取ID图书");
-      ps.setString(2, "获取ID作者");
-      ps.setString(3, "978-7-777-77777-7");
-      ps.setBigDecimal(4, new BigDecimal("149.99"));
-      ps.setDate(5, java.sql.Date.valueOf(LocalDate.now()));
-      ps.setString(6, "测试");
-      ps.setInt(7, 50);
-      return ps;
+    int rows = jdbcTemplate.update(new PreparedStatementCreator() {
+      @Override
+      public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+        PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        ps.setString(1, "获取ID图书");
+        ps.setString(2, "获取ID作者");
+        ps.setString(3, "978-7-777-77777-7");
+        ps.setBigDecimal(4, new BigDecimal("149.99"));
+        ps.setDate(5, java.sql.Date.valueOf(LocalDate.now()));
+        ps.setString(6, "测试");
+        ps.setInt(7, 50);
+        return ps;
+      }
     }, keyHolder);
 
     LOGGER.info("插入记录数: {}", rows);
