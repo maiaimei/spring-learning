@@ -15,7 +15,7 @@ public class H2DataSourceConfig {
     HikariConfig config = new HikariConfig();
     config.setJdbcUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
     config.setDriverClassName("org.h2.Driver");
-    config.setUsername("sa");
+    config.setUsername("root");
     config.setPassword("");
     config.setMaximumPoolSize(10);
     config.setMinimumIdle(2);
@@ -25,5 +25,10 @@ public class H2DataSourceConfig {
   @Bean
   public JdbcTemplate jdbcTemplate(DataSource dataSource) {
     return new JdbcTemplate(dataSource);
+  }
+
+  @Bean
+  public org.h2.tools.Server h2WebServer() throws java.sql.SQLException {
+    return org.h2.tools.Server.createWebServer("-web", "-webAllowOthers", "-webPort", "8082").start();
   }
 }

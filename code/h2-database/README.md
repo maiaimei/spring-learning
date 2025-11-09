@@ -16,10 +16,11 @@
 在需要使用H2数据库的模块的pom.xml中添加：
 
 ```xml
+
 <dependency>
-    <groupId>org.example</groupId>
-    <artifactId>h2-database</artifactId>
-    <version>1.0-SNAPSHOT</version>
+  <groupId>org.example</groupId>
+  <artifactId>h2-database</artifactId>
+  <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -53,9 +54,10 @@ public void queryBooks() {
 ## 数据库配置
 
 - 数据库URL: `jdbc:h2:mem:testdb`
-- 用户名: `sa`
+- 用户名: `root`
 - 密码: 空
 - 连接池: HikariCP (最大10个连接，最小2个空闲连接)
+- H2控制台: http://localhost:8082
 
 ## 预置数据
 
@@ -70,3 +72,12 @@ public void queryBooks() {
 cd h2-database
 mvn compile exec:java -Dexec.mainClass="org.example.H2Application"
 ```
+
+应用启动后，可以通过以下方式访问H2数据库：
+
+1. 打开浏览器访问: http://localhost:8082
+2. 在登录页面输入：
+    - JDBC URL: `jdbc:h2:mem:testdb`
+    - 用户名: `root`
+    - 密码: 留空
+3. 点击连接即可查看和操作数据库

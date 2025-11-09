@@ -40,6 +40,15 @@ public class H2Application {
       );
       log.info("H2数据库初始化完成");
 
+      // 输出H2控制台访问信息
+      log.info("===========================================");
+      log.info("H2数据库控制台已启动");
+      log.info("访问地址: http://localhost:8082");
+      log.info("JDBC URL: jdbc:h2:mem:testdb");
+      log.info("用户名: root");
+      log.info("密码: (空)");
+      log.info("===========================================");
+
       // 查询所有书籍
       log.info("查询所有书籍:");
       jdbcTemplate.query("SELECT * FROM books", rs -> {
