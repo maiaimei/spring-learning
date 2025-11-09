@@ -364,7 +364,7 @@ public void method1() { }
 public void method2() { }
 ```
 
-### 事务传播机制
+### 事务传播机制（Propagation）
 
 **事务传播机制核心在于控制事务的边界和多个事务方法之间的协作关系。**例如，当方法A（已开启事务）调用方法B（也需要事务管理）时，方法B是继续使用A的事务，还是自己新开一个事务，或是其他处理方式。
 
@@ -378,7 +378,7 @@ public void method2() { }
 | 6    | **NEVER**         | Execute non-transactionally, throw an exception if a transaction exists. <br />以非事务方式执行，如果当前存在事务，则抛出异常。 | 绝对不能在事务中的操作 |
 | 7    | **NESTED**        | Execute within a nested transaction if a current transaction exists, behave like REQUIRED otherwise.<br />如果当前存在父级事务，则当前子业务中的事务会自动成为该父级事务中的一个子事务，只有在父级事务提交后才会提交子事务。如果子事务产生异常则可以交由父级调用进行异常处理，如果父级事务产生异常，则其也会回滚。<br />简化理解：所有的事务统一交给调用业务处处理。<br />如果当前没有事务，等同于REQUIRED。 | 部分回滚场景           |
 
-### 事务隔离级别
+### 事务隔离级别（Isolation）
 
 **什么是事务隔离级别？**
 
