@@ -352,7 +352,7 @@ public @interface Transactional {
 
 ## 注解属性详解
 
-### 事务管理器
+### 事务管理器（Transaction Manager）
 
 ```java
 // 指定事务管理器
@@ -644,7 +644,7 @@ public void updateUserProfile(User user) {
 }
 ```
 
-### 超时设置
+### 超时设置（Timeout）
 
 ```java
 // 设置超时时间（秒）
@@ -656,7 +656,7 @@ public void longRunningOperation() { }
 public void configurableTimeout() { }
 ```
 
-### 只读事务
+### 只读事务（Read Only）
 
 ```java
 @Transactional(readOnly = true)
@@ -666,7 +666,7 @@ public User findUser(Long id) {
 }
 ```
 
-### 回滚规则
+### 回滚规则（Rollback）
 
 #### 默认回滚行为
 
