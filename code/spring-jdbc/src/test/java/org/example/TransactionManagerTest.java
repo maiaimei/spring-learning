@@ -29,16 +29,16 @@ public class TransactionManagerTest {
   private PlatformTransactionManager transactionManager;
 
   @Test
-  void testInsertExceptionWithoutTransaction() {
+  void testInsert_NonTransaction_Failed() {
     String sql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
     jdbcTemplate.update(sql, "测试图书1", "测试作者", "978-0-000-00000-1", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
     jdbcTemplate.update(sql, "测试图书2", "测试作者", "978-0-000-00000-2", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
-    jdbcTemplate.update(sql, null, "测试作者", "978-0-000-00000-3", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
+    jdbcTemplate.update(sql, null, "测试作者", "978-0-000-00000-3", new BigDecimal("99.99"), LocalDate.now(), "测试", 10); // 错误数据
     jdbcTemplate.update(sql, "测试图书4", "测试作者", "978-0-000-00000-4", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
   }
 
   @Test
-  void testInsertExceptionWithTransaction() {
+  void testInsert_HasTransaction_Failed() {
     String sql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
     final DefaultTransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
     // 开启事务
@@ -46,44 +46,153 @@ public class TransactionManagerTest {
     final TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
     log.info("开启事务完成");
     try {
-      jdbcTemplate.update(sql, "测试图书1", "测试作者", "978-0-000-00000-1", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
-      jdbcTemplate.update(sql, "测试图书2", "测试作者", "978-0-000-00000-2", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
-      jdbcTemplate.update(sql, null, "测试作者", "978-0-000-00000-3", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
-      jdbcTemplate.update(sql, "测试图书4", "测试作者", "978-0-000-00000-4", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
+      jdbcTemplate.update(sql, "测试图书1", "测试作者", "978-0-000-00000-1", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      jdbcTemplate.update(sql, "测试图书2", "测试作者", "978-0-000-00000-2", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      jdbcTemplate.update(sql, null, "测试作者", "978-0-000-00000-3", new BigDecimal("99.99"), LocalDate.now(), "测试", 10); // 错误数据
+      jdbcTemplate.update(sql, "测试图书4", "测试作者", "978-0-000-00000-4", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
       // 提交事务
       log.info("提交事务");
       transactionManager.commit(transactionStatus);
       log.info("提交事务完成");
     } catch (Exception ex) {
       // 回滚事务
-      log.error("回滚事务，发生错误: {}", ex.getMessage(), ex);
+      log.error("发生错误: {}", ex.getMessage(), ex);
+      log.info("回滚事务");
       transactionManager.rollback(transactionStatus);
       log.info("回滚事务完成");
     }
   }
 
   @Test
-  void testInsertSuccessWithTransaction() {
+  void testInsert_HasTransaction_Success() {
     String sql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
     final DefaultTransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
     // 开启事务
     log.info("开启事务");
     final TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
+
+    // 打印事务开启后的状态
+    printTransactionStatus("事务开启后", transactionStatus);
+
+    try {
+      jdbcTemplate.update(sql, "测试图书1", "测试作者", "978-0-000-00000-1", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+
+      // 打印执行第一条SQL后的状态
+      printTransactionStatus("执行第一条SQL后", transactionStatus);
+
+      jdbcTemplate.update(sql, "测试图书2", "测试作者", "978-0-000-00000-2", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      jdbcTemplate.update(sql, "测试图书3", "测试作者", "978-0-000-00000-3", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      jdbcTemplate.update(sql, "测试图书4", "测试作者", "978-0-000-00000-4", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+
+      // 打印提交前的状态
+      printTransactionStatus("提交前", transactionStatus);
+
+      // 提交事务
+      log.info("提交事务");
+      transactionManager.commit(transactionStatus);
+
+      // 打印提交后的状态
+      printTransactionStatus("提交后", transactionStatus);
+
+      log.info("提交事务完成");
+    } catch (Exception ex) {
+      // 打印异常时的状态
+      printTransactionStatus("异常时", transactionStatus);
+
+      // 回滚事务
+      log.error("发生错误: {}", ex.getMessage(), ex);
+
+      log.info("回滚事务");
+      transactionManager.rollback(transactionStatus);
+
+      // 打印回滚后的状态
+      printTransactionStatus("回滚后", transactionStatus);
+
+      log.info("回滚事务完成");
+    }
+  }
+
+  private void printTransactionStatus(String phase, TransactionStatus status) {
+    log.info("=== {} 事务状态 ===", phase);
+    log.info("事务类名: {}", status.getClass().getName());
+    log.info("是否新事务: {}", status.isNewTransaction());
+    log.info("是否有保存点: {}", status.hasSavepoint());
+    log.info("是否只读: {}", status.isRollbackOnly());
+    log.info("是否已完成: {}", status.isCompleted());
+    log.info("========================");
+  }
+
+  @Test
+  void testInsert_TransactionStatus_RollbackOnly() {
+    String sql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    final DefaultTransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
+    // 开启事务
+    log.info("开启事务");
+    final TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
+    transactionStatus.setRollbackOnly();
     log.info("开启事务完成");
     try {
-      jdbcTemplate.update(sql, "测试图书1", "测试作者", "978-0-000-00000-1", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
-      jdbcTemplate.update(sql, "测试图书2", "测试作者", "978-0-000-00000-2", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
-      jdbcTemplate.update(sql, "测试图书3", "测试作者", "978-0-000-00000-3", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
-      jdbcTemplate.update(sql, "测试图书4", "测试作者", "978-0-000-00000-4", new BigDecimal("99.99"), LocalDate.now(), "测试", 10);
+      jdbcTemplate.update(sql, "测试图书1", "测试作者", "978-0-000-00000-1", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      jdbcTemplate.update(sql, "测试图书2", "测试作者", "978-0-000-00000-2", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      jdbcTemplate.update(sql, "测试图书3", "测试作者", "978-0-000-00000-3", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      jdbcTemplate.update(sql, "测试图书4", "测试作者", "978-0-000-00000-4", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
       // 提交事务
       log.info("提交事务");
       transactionManager.commit(transactionStatus);
       log.info("提交事务完成");
     } catch (Exception ex) {
       // 回滚事务
-      log.error("回滚事务，发生错误: {}", ex.getMessage(), ex);
+      log.error("发生错误: {}", ex.getMessage(), ex);
+      log.info("回滚事务");
       transactionManager.rollback(transactionStatus);
       log.info("回滚事务完成");
+    }
+  }
+
+  @Test
+  void testInsert_TransactionStatus_Savepoint() {
+    String sql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    final DefaultTransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
+    // 开启事务
+    log.info("开启事务");
+    final TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
+    log.info("开启事务完成");
+    Object savepointA = null;
+    Object savepointB = null;
+    try {
+      jdbcTemplate.update(sql, "测试图书1", "测试作者", "978-0-000-00000-1", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      savepointA = transactionStatus.createSavepoint();
+      jdbcTemplate.update(sql, "测试图书2", "测试作者", "978-0-000-00000-2", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      savepointB = transactionStatus.createSavepoint();
+      jdbcTemplate.update(sql, null, "测试作者", "978-0-000-00000-3", new BigDecimal("99.99"), LocalDate.now(), "测试", 10); // 错误数据
+      jdbcTemplate.update(sql, "测试图书4", "测试作者", "978-0-000-00000-4", new BigDecimal("99.99"), LocalDate.now(), "测试",
+          10);
+      // 提交事务
+      log.info("提交事务");
+      transactionManager.commit(transactionStatus);
+      log.info("提交事务完成");
+    } catch (Exception ex) {
+      // 回滚事务
+      log.error("发生错误: {}", ex.getMessage(), ex);
+      log.info("回滚到指定保存点");
+      transactionStatus.rollbackToSavepoint(savepointA);
+      log.info("回滚到指定保存点完成");
+      log.info("提交事务");
+      transactionManager.commit(transactionStatus);
+      log.info("提交事务完成");
     }
   }
 

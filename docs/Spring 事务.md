@@ -265,7 +265,7 @@ Spring事务是对已有JDBC事务的进一步的包装型处理，所以底层�
 
 ![](./images/Spring-Transaction-20251108-112825.png)
 
-核心事务接口：
+## 核心事务接口
 
 ```java
 public interface PlatformTransactionManager extends TransactionManager {
@@ -278,13 +278,17 @@ public interface PlatformTransactionManager extends TransactionManager {
 }
 ```
 
-事务处理架构：
+## 事务处理架构
 
 ![](./images/Spring-Transaction-20251108-114102.png)
 
 ![](./images/Spring-Transaction-20251108-114547.png)
 
 ![](./images/PlatformTransactionManger-20251109-162633.png)
+
+![](./images/TransactionStatus-20251109-171448.png)
+
+## spring-tx
 
 **`spring-tx`** JAR 提供Spring事务管理的核心功能：
 
