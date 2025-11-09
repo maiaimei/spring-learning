@@ -3,6 +3,7 @@ package org.example;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -27,6 +28,12 @@ public class TransactionManagerTest {
 
   @Autowired
   private PlatformTransactionManager transactionManager;
+
+  @BeforeEach
+  void setUp() {
+    // 清理测试数据
+    jdbcTemplate.execute("DELETE FROM books WHERE title LIKE '测试%'");
+  }
 
   @Test
   void testInsert_NonTransaction_Failed() {
