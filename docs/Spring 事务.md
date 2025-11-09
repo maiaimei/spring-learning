@@ -270,11 +270,11 @@ Spring事务是对已有JDBC事务的进一步的包装型处理，所以底层�
 ```java
 public interface PlatformTransactionManager extends TransactionManager {
 
-	TransactionStatus getTransaction(TransactionDefinition definition) throws TransactionException;
+ TransactionStatus getTransaction(TransactionDefinition definition) throws TransactionException;
 
-	void commit(TransactionStatus status) throws TransactionException;
+ void commit(TransactionStatus status) throws TransactionException;
 
-	void rollback(TransactionStatus status) throws TransactionException;
+ void rollback(TransactionStatus status) throws TransactionException;
 }
 ```
 
@@ -380,15 +380,67 @@ public void method2() { }
 
 ### 事务隔离级别
 
-**事务隔离级别是在并发环境访问下才会存在的问题。**在实际项目开发中，很可能有两个或多个不同的线程，每个线程拥有各自的数据库事务，要进行同一条数据的更新操作。为了保证数据在更新时候的正确性，那么就需要对数据的同步进行有效的管理，这就属于数据库隔离级别的概念了。
+**什么是事务隔离级别？**
 
-| 隔离级别             | 说明                   | 解决的问题             | 可能出现的问题         |
-| -------------------- | ---------------------- | ---------------------- | ---------------------- |
-| **DEFAULT**          | 使用数据库默认隔离级别 | -                      | 取决于数据库           |
-| **READ_UNCOMMITTED** | 读未提交               | -                      | 脏读、不可重复读、幻读 |
-| **READ_COMMITTED**   | 读已提交               | 脏读                   | 不可重复读、幻读       |
-| **REPEATABLE_READ**  | 可重复读               | 脏读、不可重复读       | 幻读                   |
-| **SERIALIZABLE**     | 串行化                 | 脏读、不可重复读、幻读 | 性能最低               |
+想象一下图书馆的场景：多个人同时在借阅和归还同一本书，如果没有规则，就会出现混乱。事务隔离级别就是数据库为了解决多个事务同时操作同一数据时的"冲突规则"。
+
+**为什么需要隔离级别？**
+
+在实际项目中，经常有多个用户同时操作数据库：
+
+- 用户A正在查看商品库存
+- 用户B同时在购买这个商品
+- 用户C在修改商品信息
+
+如果没有隔离控制，就会出现数据混乱的问题。
+
+**常见的并发问题：**
+
+1. **脏读（Dirty Read）**
+   - 比喻：你看到朋友说"我给你转了1000元"，但实际上他还没转成功就取消了
+   - 技术：事务A读取了事务B未提交的数据，但B最终回滚了
+
+2. **不可重复读（Non-Repeatable Read）**：针对**已存在的具体记录**，关注的是同一条记录的**值**是否发生变化。比如：用户ID=1的余额从1000变成800。UPDATE操作影响，不可重复读是"内容变了"。
+   - 比喻：你查看银行余额是1000元，过一会再查变成了800元（别人转走了钱）
+   - 技术：同一事务中多次读取同一数据，结果不一致
+   - 解决方案：通过**行级锁**解决，锁定读取的具体行，防止其他事务修改。
+   
+3. **幻读（Phantom Read）**：针对**记录的数量**，关注的是查询结果集中**记录数**是否发生变化。比如：符合条件的用户从10个变成12个。INSERT/DELETE操作影响，幻读是"数量变了"。
+   - 比喻：你数了数书架上有10本书，再数一遍变成了12本（别人新放了书）
+   - 技术：同一事务中多次查询，记录数量发生变化
+   - 解决方案：需要**范围锁/间隙锁**解决，不仅锁定已存在的行，还要锁定可能插入新记录的"间隙"。
+
+**四种隔离级别详解：**
+
+| 隔离级别 | 通俗理解 | 解决的问题 | 仍存在的问题 | 使用场景 |
+|---------|---------|-----------|-------------|----------|
+| **READ_UNCOMMITTED**<br/>（读未提交） | 完全不设防，什么都能看到<br/>就像开放式图书馆，任何人都能随意取放书 | 无 | 脏读、不可重复读、幻读 | 几乎不用，性能要求极高且数据准确性不重要的场景 |
+| **READ_COMMITTED**<br/>（读已提交） | 只能看到别人确认完成的操作<br/>就像只能看到正式登记入库的书 | 脏读 | 不可重复读、幻读 | **最常用**，适合大多数业务场景 |
+| **REPEATABLE_READ**<br/>（可重复读） | 在你操作期间，看到的数据保持不变<br/>就像给你一个书架的快照，期间不会变化 | 脏读、不可重复读 | 幻读 | MySQL默认级别，适合需要数据一致性的场景 |
+| **SERIALIZABLE**<br/>（串行化） | 完全排队，一个一个来<br/>就像图书馆只允许一个人进入 | 脏读、不可重复读、幻读 | 性能极低 | 对数据一致性要求极高的场景 |
+
+**实际应用建议：**
+
+```java
+// 一般查询操作 - 使用默认级别
+@Transactional
+public List<Product> getProducts() { }
+
+// 金融交易 - 使用可重复读
+@Transactional(isolation = Isolation.REPEATABLE_READ)
+public void transferMoney(Long fromId, Long toId, BigDecimal amount) { }
+
+// 报表统计 - 使用串行化确保数据准确
+@Transactional(isolation = Isolation.SERIALIZABLE)
+public void generateFinancialReport() { }
+```
+
+**记忆口诀：**
+
+- 隔离级别越高，数据越安全，性能越低
+- 大部分情况用READ_COMMITTED就够了
+- 涉及钱的用REPEATABLE_READ
+- 要求绝对准确用SERIALIZABLE
 
 ### 超时设置
 
