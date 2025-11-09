@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.sql.DataSource;
 import org.example.model.Book;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,11 +25,7 @@ class JdbcTemplateTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(JdbcTemplateTest.class);
 
   @Autowired
-  private DataSource dataSource;
-
-  private JdbcTemplate getJdbcTemplate() {
-    return new JdbcTemplate(dataSource);
-  }
+  private JdbcTemplate jdbcTemplate;
 
   // RowMapper
   private static final RowMapper<Book> BOOK_ROW_MAPPER = new RowMapper<Book>() {
@@ -51,8 +46,6 @@ class JdbcTemplateTest {
 
   @Test
   void testCount() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     String sql = "SELECT COUNT(*) FROM books";
     Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
 
@@ -61,8 +54,6 @@ class JdbcTemplateTest {
 
   @Test
   void testSelectAll() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     String sql = "SELECT * FROM books";
     List<Book> books = jdbcTemplate.query(sql, BOOK_ROW_MAPPER);
 
@@ -72,8 +63,6 @@ class JdbcTemplateTest {
 
   @Test
   void testSelectById() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     String sql = "SELECT * FROM books WHERE id = ?";
     Book book = jdbcTemplate.queryForObject(sql, BOOK_ROW_MAPPER, 1L);
 
@@ -82,8 +71,6 @@ class JdbcTemplateTest {
 
   @Test
   void testInsert() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     String sql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
     int rows = jdbcTemplate.update(sql,
         "测试图书", "测试作者", "978-0-000-00000-0",
@@ -94,8 +81,6 @@ class JdbcTemplateTest {
 
   @Test
   void testUpdate() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     String sql = "UPDATE books SET price = ?, stock = ? WHERE id = ?";
     int rows = jdbcTemplate.update(sql, new BigDecimal("199.99"), 100, 1L);
 
@@ -104,8 +89,6 @@ class JdbcTemplateTest {
 
   @Test
   void testDelete() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     String sql = "DELETE FROM books WHERE isbn = ?";
     int rows = jdbcTemplate.update(sql, "978-0-000-00000-0");
 
@@ -114,8 +97,6 @@ class JdbcTemplateTest {
 
   @Test
   void testBatchUpdate() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     // 准备批量更新的数据
     List<Book> booksToInsert = Arrays.asList(
         createBook("批量图书1", "作者1", "978-1-111-11111-1", "99.99", "编程", 20),
@@ -149,8 +130,6 @@ class JdbcTemplateTest {
 
   @Test
   void testBatchUpdateWithObjectArray() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     String sql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     // 准备批量参数数组
@@ -170,8 +149,6 @@ class JdbcTemplateTest {
 
   @Test
   void testInsertWithGeneratedKey() {
-    JdbcTemplate jdbcTemplate = getJdbcTemplate();
-
     String sql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     KeyHolder keyHolder = new GeneratedKeyHolder();
