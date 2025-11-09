@@ -432,7 +432,7 @@ public void method2() { }
 - 例如：符合条件的用户从10个变成12个
 - 通常由INSERT/DELETE操作引起
 
-**解决方案**：需要**范围锁/间隙锁**解决，不仅锁定已存在的行，还要锁定可能插入新记录的"间隙"
+**解决方案**：需要**范围锁/间隙锁（Gap Lock）**解决，不仅锁定已存在的行，还要锁定可能插入新记录的"间隙"
 
 **记忆技巧**：数量变了，像"幻觉"一样突然多了或少了记录
 
@@ -503,7 +503,7 @@ public void method2() { }
 
 **注意事项：**
 - 不同数据库对隔离级别的实现可能有差异
-- MySQL默认使用REPEATABLE_READ
+- MySQL默认使用REPEATABLE_READ。
 - Oracle、PostgreSQL默认使用READ_COMMITTED
 - 可以在方法级别动态调整隔离级别
 
