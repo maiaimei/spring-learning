@@ -284,6 +284,8 @@ public interface PlatformTransactionManager extends TransactionManager {
 
 ![](./images/Spring-Transaction-20251108-114547.png)
 
+![](./images/PlatformTransactionManger-20251109-162633.png)
+
 **`spring-tx`** JAR 提供Spring事务管理的核心功能：
 
 - **声明式事务管理** - 使用 `@Transactional` 注解
@@ -795,8 +797,12 @@ public class ProgrammaticTransactionService {
 }
 ```
 
-# 相关连接
+# 参考资料
 
 [Transaction Management](https://docs.spring.io/spring-framework/reference/data-access/transaction.html)
 
 [Understanding the Spring Framework Transaction Abstraction](https://docs.spring.io/spring-framework/reference/data-access/transaction/strategies.html)
+
+[【java框架】SpringJDBC数据库编程](https://www.bilibili.com/video/BV1Ne4y1f7aB?spm_id_from=333.1387.favlist.content.click)
+
+[【java框架】Spring事务处理架构](https://www.bilibili.com/video/BV1od4y1o75v?spm_id_from=333.1387.favlist.content.click)
