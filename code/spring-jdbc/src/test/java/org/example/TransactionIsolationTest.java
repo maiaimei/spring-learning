@@ -178,12 +178,12 @@ public class TransactionIsolationTest {
   }
 
   /**
-   * 测试REPEATABLE_READ隔离级别 - 避免脏读和不可重复读，但可能出现幻读
-   * 事务A在整个事务期间读取同一数据的结果保持一致
+   * 测试REPEATABLE_READ隔离级别 - MySQL实际上通过间隙锁避免了幻读
+   * 演示MySQL REPEATABLE_READ的实际行为与理论的区别
    */
   @Test
   void testRepeatableRead_PhantomRead() throws Exception {
-    LOGGER.info("=== 测试REPEATABLE_READ隔离级别 - 幻读 ===");
+    LOGGER.info("=== 测试REPEATABLE_READ隔离级别 - MySQL的间隙锁机制 ===");
 
     ExecutorService executor = Executors.newFixedThreadPool(2);
 
@@ -194,6 +194,98 @@ public class TransactionIsolationTest {
       TransactionStatus status = transactionManager.getTransaction(def);
 
       try {
+        LOGGER.info("事务A开始，使用REPEATABLE_READ隔离级别");
+
+        // 第一次查询记录数
+        Integer count1 = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM books WHERE category = '测试'", Integer.class);
+        LOGGER.info("事务A第一次查询测试分类图书数量: {}", count1);
+
+        // 查询具体记录
+        List<Map<String, Object>> books1 = jdbcTemplate.queryForList(
+            "SELECT title FROM books WHERE category = '测试' ORDER BY title");
+        LOGGER.info("事务A第一次查询到的图书: {}", books1);
+
+        Thread.sleep(500); // 等待事务B尝试插入数据
+
+        // 第二次查询记录数
+        Integer count2 = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM books WHERE category = '测试'", Integer.class);
+        LOGGER.info("事务A第二次查询测试分类图书数量: {} (MySQL通过间隙锁避免了幻读)",
+            count2); // 第二次读取还是0的原因是 MySQL的REPEATABLE_READ隔离级别实际上通过间隙锁（Gap Lock）避免了幻读 。这与理论上的REPEATABLE_READ行为不同。
+
+        // 查询具体记录
+        List<Map<String, Object>> books2 = jdbcTemplate.queryForList(
+            "SELECT title FROM books WHERE category = '测试' ORDER BY title");
+        LOGGER.info("事务A第二次查询到的图书: {}", books2);
+
+        if (count1.equals(count2)) {
+          LOGGER.info("✓ MySQL的REPEATABLE_READ成功避免了幻读");
+        } else {
+          LOGGER.info("✗ 出现了幻读现象");
+        }
+
+        transactionManager.commit(status);
+        LOGGER.info("事务A提交完成");
+      } catch (Exception e) {
+        LOGGER.error("事务A异常", e);
+        transactionManager.rollback(status);
+      }
+    }, executor);
+
+    CompletableFuture<Void> transaction2 = CompletableFuture.runAsync(() -> {
+      // 事务B：尝试插入新数据（可能被阻塞）
+      DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+      TransactionStatus status = transactionManager.getTransaction(def);
+
+      try {
+        Thread.sleep(200); // 让事务A先查询一次
+
+        LOGGER.info("事务B尝试插入新的测试图书（可能被间隙锁阻塞）");
+        long startTime = System.currentTimeMillis();
+
+        String insertSql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, "
+            + "?, ?)";
+        jdbcTemplate.update(insertSql, "测试图书3", "测试作者", "978-0-000-00003-0",
+            new BigDecimal("80.00"), LocalDate.now(), "测试", 5);
+
+        long endTime = System.currentTimeMillis();
+        LOGGER.info("事务B插入成功，耗时: {}ms (如果耗时较长说明被间隙锁阻塞了)", endTime - startTime);
+
+        transactionManager.commit(status);
+        LOGGER.info("事务B提交完成");
+      } catch (Exception e) {
+        LOGGER.error("事务B异常（可能因为锁等待超时）: {}", e.getMessage());
+        transactionManager.rollback(status);
+      }
+    }, executor);
+
+    CompletableFuture.allOf(transaction1, transaction2).get(10, TimeUnit.SECONDS);
+    executor.shutdown();
+
+    // 验证最终状态
+    Integer finalCount = jdbcTemplate.queryForObject(
+        "SELECT COUNT(*) FROM books WHERE category = '测试'", Integer.class);
+    LOGGER.info("所有事务完成后，测试分类图书总数: {}", finalCount);
+  }
+
+  /**
+   * 演示真正的幻读现象 - 使用READ_COMMITTED隔离级别
+   * 在READ_COMMITTED下可以观察到幻读现象
+   */
+  @Test
+  void testReadCommitted_PhantomRead() throws Exception {
+    LOGGER.info("=== 使用READ_COMMITTED演示真正的幻读现象 ===");
+
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+
+    CompletableFuture<Void> transaction1 = CompletableFuture.runAsync(() -> {
+      // 事务A：使用READ_COMMITTED隔离级别
+      DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+      def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+      TransactionStatus status = transactionManager.getTransaction(def);
+
+      try {
         // 第一次查询记录数
         Integer count1 = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM books WHERE category = '测试'", Integer.class);
@@ -201,15 +293,14 @@ public class TransactionIsolationTest {
 
         Thread.sleep(300); // 等待事务B插入数据
 
-        // 第二次查询记录数（可能出现幻读）
+        // 第二次查询记录数（会看到新插入的记录）
         Integer count2 = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM books WHERE category = '测试'", Integer.class);
-        LOGGER.info("事务A第二次查询测试分类图书数量: {} (可能出现幻读)", count2);
+        LOGGER.info("事务A第二次查询测试分类图书数量: {} (出现幻读)", count2);
 
-        // 查询具体记录
-        List<Map<String, Object>> books = jdbcTemplate.queryForList(
-            "SELECT title FROM books WHERE category = '测试'");
-        LOGGER.info("事务A查询到的图书: {}", books);
+        if (!count1.equals(count2)) {
+          LOGGER.info("✓ 在READ_COMMITTED下成功观察到幻读现象");
+        }
 
         transactionManager.commit(status);
       } catch (Exception e) {
@@ -228,8 +319,8 @@ public class TransactionIsolationTest {
 
         String insertSql = "INSERT INTO books (title, author, isbn, price, publish_date, category, stock) VALUES (?, ?, ?, ?, ?, "
             + "?, ?)";
-        jdbcTemplate.update(insertSql, "测试图书3", "测试作者", "978-0-000-00003-0",
-            new BigDecimal("80.00"), LocalDate.now(), "测试", 5);
+        jdbcTemplate.update(insertSql, "测试图书5", "测试作者", "978-0-000-00005-0",
+            new BigDecimal("90.00"), LocalDate.now(), "测试", 3);
         LOGGER.info("事务B插入新的测试图书并提交");
 
         transactionManager.commit(status);
