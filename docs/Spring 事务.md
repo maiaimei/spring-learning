@@ -507,6 +507,132 @@ public void method2() { }
 - Oracle、PostgreSQL默认使用READ_COMMITTED
 - 可以在方法级别动态调整隔离级别
 
+#### 不同数据库查看事务隔离级别的方法
+
+**MySQL**
+
+```sql
+-- 查看全局隔离级别
+SELECT @@global.transaction_isolation;
+
+-- 查看当前会话隔离级别
+SELECT @@session.transaction_isolation;
+SELECT @@transaction_isolation;
+
+-- 旧版本MySQL（5.7及以前）
+SELECT @@global.tx_isolation;
+SELECT @@session.tx_isolation;
+
+-- 设置隔离级别
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+```
+
+**PostgreSQL**
+
+```sql
+-- 查看当前隔离级别
+SHOW transaction_isolation;
+
+-- 或者
+SELECT current_setting('transaction_isolation');
+
+-- 查看所有事务相关设置
+SHOW ALL;
+
+-- 设置隔离级别
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+```
+
+**Oracle**
+
+```sql
+-- Oracle没有全局隔离级别设置，每个事务单独设置
+-- 查看当前会话的隔离级别（通过V$TRANSACTION视图）
+SELECT s.sid, s.serial#, t.isolation_level 
+FROM v$session s, v$transaction t 
+WHERE s.saddr = t.ses_addr AND s.sid = SYS_CONTEXT('USERENV', 'SID');
+
+-- 设置事务隔离级别
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+```
+
+**SQL Server**
+
+```sql
+-- 查看当前连接的隔离级别
+SELECT 
+    CASE transaction_isolation_level 
+        WHEN 0 THEN 'Unspecified' 
+        WHEN 1 THEN 'ReadUncommitted' 
+        WHEN 2 THEN 'ReadCommitted' 
+        WHEN 3 THEN 'Repeatable' 
+        WHEN 4 THEN 'Serializable' 
+        WHEN 5 THEN 'Snapshot' 
+    END AS isolation_level_desc
+FROM sys.dm_exec_sessions 
+WHERE session_id = @@SPID;
+
+-- 设置隔离级别
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+```
+
+**H2 Database**
+
+```sql
+-- 查看隔离级别
+SELECT VALUE FROM INFORMATION_SCHEMA.SETTINGS WHERE NAME = 'DEFAULT_LOCK_TIMEOUT';
+
+-- 设置隔离级别
+SET LOCK_MODE 3; -- READ_COMMITTED
+SET LOCK_MODE 1; -- SERIALIZABLE
+```
+
+**在Spring中查看隔离级别**
+
+```java
+@Test
+void checkDatabaseIsolationLevel() {
+    // 通过JDBC连接查看
+    try (Connection conn = jdbcTemplate.getDataSource().getConnection()) {
+        int isolationLevel = conn.getTransactionIsolation();
+        String levelName = switch (isolationLevel) {
+            case Connection.TRANSACTION_NONE -> "NONE";
+            case Connection.TRANSACTION_READ_UNCOMMITTED -> "READ_UNCOMMITTED";
+            case Connection.TRANSACTION_READ_COMMITTED -> "READ_COMMITTED";
+            case Connection.TRANSACTION_REPEATABLE_READ -> "REPEATABLE_READ";
+            case Connection.TRANSACTION_SERIALIZABLE -> "SERIALIZABLE";
+            default -> "UNKNOWN";
+        };
+        log.info("数据库默认隔离级别: {} ({})", levelName, isolationLevel);
+    } catch (SQLException e) {
+        log.error("获取隔离级别失败", e);
+    }
+    
+    // 通过JdbcTemplate查看（MySQL示例）
+    try {
+        String isolation = jdbcTemplate.queryForObject(
+            "SELECT @@transaction_isolation", String.class);
+        log.info("MySQL当前隔离级别: {}", isolation);
+    } catch (Exception e) {
+        log.warn("查询MySQL隔离级别失败: {}", e.getMessage());
+    }
+}
+```
+
+**各数据库默认隔离级别**
+
+| 数据库         | 默认隔离级别    |
+| -------------- | --------------- |
+| MySQL (InnoDB) | REPEATABLE_READ |
+| PostgreSQL     | READ_COMMITTED  |
+| Oracle         | READ_COMMITTED  |
+| SQL Server     | READ_COMMITTED  |
+| H2             | READ_COMMITTED  |
+
 ### 标签（Label）
 
 用于为事务添加描述性标签，便于监控和调试：
