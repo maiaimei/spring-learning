@@ -1,4 +1,4 @@
-package org.example.config;
+package org.example;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -11,11 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ContextConfiguration(classes = {DataSourceConfig.class, DatabaseProperties.class})
+@ContextConfiguration(classes = {Application.class})
 @ExtendWith(SpringExtension.class)
-class DataSourceConfigTest {
+class DataSourceTest {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DataSourceConfigTest.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DataSourceTest.class);
 
   @Autowired
   private DataSource dataSource;
