@@ -24,12 +24,6 @@
       <version>${spring.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-context-support</artifactId>
-      <version>${spring.version}</version>
-    </dependency>
-
     <!-- Spring JDBC: Spring JDBC支持 -->
     <dependency>
       <groupId>org.springframework</groupId>
@@ -72,14 +66,6 @@
       <version>3.0.0</version>
     </dependency>
 
-    <!-- Lombok: 代码生成工具，使用provided作用域 -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.36</version>
-      <scope>provided</scope>
-    </dependency>
-
     <!-- H2 Database Module -->
     <dependency>
       <groupId>org.example</groupId>
@@ -100,13 +86,21 @@
       <version>5.1.0</version>
     </dependency>
 
+    <!-- Lombok: 代码生成工具，使用provided作用域 -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.36</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- SLF4J API: 日志接口 -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>2.0.16</version>
     </dependency>
-    
+
     <!-- Logback: 日志框架 -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
