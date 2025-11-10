@@ -29,8 +29,10 @@ public class H2DatabaseInitializer {
             ")"
     );
 
-    jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "Spring实战");
-    jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "Java核心技术");
+    jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "Java编程规范");
+    jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "Java并发编程实战");
+    jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "重构:改善既有代码的设计");
+    jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "设计模式");
 
     log.info("H2数据库初始化完成");
   }
