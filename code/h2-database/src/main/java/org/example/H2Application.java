@@ -22,9 +22,10 @@ public class H2Application {
 
   private static void printH2Info() {
     log.info("===========================================");
-    log.info("H2数据库控制台已启动");
-    log.info("访问地址: http://localhost:8082");
-    log.info("JDBC URL: jdbc:h2:mem:testdb");
+    log.info("H2数据库服务已启动");
+    log.info("Web控制台: http://localhost:8082");
+    log.info("TCP端口: 9092");
+    log.info("JDBC URL: jdbc:h2:tcp://localhost:9092/mem:testdb");
     log.info("用户名: sa");
     log.info("密码: (空)");
     log.info("===========================================");
