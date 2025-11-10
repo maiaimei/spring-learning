@@ -1,10 +1,11 @@
 package org.example;
 
 import java.sql.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class JdbcTest {
 
   private static final Logger log = LoggerFactory.getLogger(JdbcTest.class);
@@ -14,6 +15,7 @@ class JdbcTest {
   String H2_PASSWORD = "";
 
   @Test
+  @Order(1)
   void testCount() {
     // DriverManager会自动扫描classpath，找到所有的JDBC驱动，然后根据我们传入的URL自动挑选一个合适的驱动。
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
@@ -32,6 +34,7 @@ class JdbcTest {
   }
 
   @Test
+  @Order(2)
   void testSelectAll() {
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
       try (PreparedStatement ps = conn.prepareStatement("SELECT id, title FROM books")) {
@@ -50,6 +53,7 @@ class JdbcTest {
   }
 
   @Test
+  @Order(3)
   void testSelectById() {
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
       try (PreparedStatement ps = conn.prepareStatement("SELECT id, title FROM books WHERE id = ?")) {
@@ -69,6 +73,7 @@ class JdbcTest {
   }
 
   @Test
+  @Order(4)
   void testInsert() {
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
       try (PreparedStatement ps = conn.prepareStatement("INSERT INTO books (title) VALUES (?)")) {
@@ -83,6 +88,7 @@ class JdbcTest {
   }
 
   @Test
+  @Order(5)
   void testUpdate() {
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
       try (PreparedStatement ps = conn.prepareStatement("UPDATE books SET title = ? WHERE id = ?")) {
@@ -98,6 +104,7 @@ class JdbcTest {
   }
 
   @Test
+  @Order(6)
   void testDelete() {
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
       try (PreparedStatement ps = conn.prepareStatement("DELETE FROM books WHERE title LIKE '%测试%'")) {
@@ -111,6 +118,7 @@ class JdbcTest {
   }
 
   @Test
+  @Order(7)
   void testBatch() {
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
       try (PreparedStatement ps = conn.prepareStatement("INSERT INTO books (title) VALUES (?)")) {
@@ -130,6 +138,7 @@ class JdbcTest {
   }
 
   @Test
+  @Order(8)
   void testTransactionSuccess() {
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
       conn.setAutoCommit(false);
@@ -157,6 +166,7 @@ class JdbcTest {
   }
 
   @Test
+  @Order(9)
   void testTransactionFailed() {
     try (Connection conn = DriverManager.getConnection(H2_URL, H2_USERNAME, H2_PASSWORD)) {
       conn.setAutoCommit(false);
