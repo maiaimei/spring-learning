@@ -19,29 +19,18 @@ public class H2DatabaseInitializer {
 
   @PostConstruct
   public void initDatabase() {
-    log.info("初始化H2数据库...");
+    log.info("H2数据库初始化开始");
 
-    // 创建books表
     jdbcTemplate.execute(
         "CREATE TABLE IF NOT EXISTS books (" +
             "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
             "title VARCHAR(255) NOT NULL," +
-            "author VARCHAR(255) NOT NULL," +
-            "price DECIMAL(10,2) NOT NULL," +
             "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
             ")"
     );
 
-    // 插入测试数据
-    jdbcTemplate.update(
-        "INSERT INTO books (title, author, price) VALUES (?, ?, ?)",
-        "Spring实战", "张三", 59.99
-    );
-
-    jdbcTemplate.update(
-        "INSERT INTO books (title, author, price) VALUES (?, ?, ?)",
-        "Java核心技术", "李四", 89.99
-    );
+    jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "Spring实战");
+    jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "Java核心技术");
 
     log.info("H2数据库初始化完成");
   }
