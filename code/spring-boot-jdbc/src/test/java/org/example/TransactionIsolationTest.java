@@ -151,7 +151,8 @@ public class TransactionIsolationTest {
 
   @Test
   void testRepeatableReadPhantomRead() throws Exception {
-    log.info("=== 测试REPEATABLE_READ隔离级别 - MySQL的间隙锁机制 ===");
+    log.info("=== 测试REPEATABLE_READ隔离级别 - H2数据库幻读测试 ===");
+    log.info("注意：H2数据库在REPEATABLE_READ级别下可能会出现幻读现象");
 
     ExecutorService executor = Executors.newFixedThreadPool(2);
 
@@ -163,6 +164,7 @@ public class TransactionIsolationTest {
       try {
         log.info("事务A开始，使用REPEATABLE_READ隔离级别");
 
+        // 第一次查询
         Integer count1 = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM books WHERE title LIKE '测试幻读%'", Integer.class);
         log.info("事务A第一次查询测试幻读图书数量: {}", count1);
@@ -171,20 +173,22 @@ public class TransactionIsolationTest {
             "SELECT id, title FROM books WHERE title LIKE '测试幻读%' ORDER BY title");
         log.info("事务A第一次查询到的图书: {}", books1);
 
-        Thread.sleep(5000);
+        // 等待事务B插入数据
+        Thread.sleep(1000);
 
+        // 第二次查询
         Integer count2 = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM books WHERE title LIKE '测试幻读%'", Integer.class);
-        log.info("事务A第二次查询测试幻读图书数量: {} (MySQL通过间隙锁避免了幻读)", count2);
+        log.info("事务A第二次查询测试幻读图书数量: {}", count2);
 
         List<Map<String, Object>> books2 = jdbcTemplate.queryForList(
             "SELECT id, title FROM books WHERE title LIKE '测试幻读%' ORDER BY title");
         log.info("事务A第二次查询到的图书: {}", books2);
 
         if (count1.equals(count2)) {
-          log.info("✓ MySQL的REPEATABLE_READ成功避免了幻读");
+          log.info("✓ 没有出现幻读现象，数据一致");
         } else {
-          log.info("✗ 出现了幻读现象");
+          log.info("✗ 出现了幻读现象：第一次查询{}条，第二次查询{}条", count1, count2);
         }
 
         transactionManager.commit(status);
@@ -200,15 +204,17 @@ public class TransactionIsolationTest {
       TransactionStatus status = transactionManager.getTransaction(def);
 
       try {
-        Thread.sleep(100);
+        // 等待事务A先查询一次
+        Thread.sleep(200);
 
-        log.info("事务B尝试插入新的测试幻读图书（可能被间隙锁阻塞）");
-        long startTime = System.currentTimeMillis();
+        log.info("事务B开始插入新的测试幻读图书");
 
+        // 插入多条数据增加幻读效果
         jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "测试幻读图书1");
+        jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "测试幻读图书2");
+        jdbcTemplate.update("INSERT INTO books (title) VALUES (?)", "测试幻读图书3");
 
-        long endTime = System.currentTimeMillis();
-        log.info("事务B插入成功，耗时: {} ms", endTime - startTime);
+        log.info("事务B插入了3条数据并提交");
 
         transactionManager.commit(status);
         log.info("事务B提交完成");
@@ -218,7 +224,7 @@ public class TransactionIsolationTest {
       }
     }, executor);
 
-    CompletableFuture.allOf(transaction1, transaction2).get(20, TimeUnit.SECONDS);
+    CompletableFuture.allOf(transaction1, transaction2).get(10, TimeUnit.SECONDS);
     executor.shutdown();
   }
 
