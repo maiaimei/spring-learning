@@ -1,5 +1,7 @@
 package org.example;
 
+import static org.example.constants.H2Constants.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -23,11 +25,10 @@ public class H2Application {
   private static void printH2Info() {
     log.info("===========================================");
     log.info("H2数据库服务已启动");
-    log.info("Web控制台: http://localhost:8082");
-    log.info("TCP端口: 9092");
-    log.info("JDBC URL: jdbc:h2:tcp://localhost:9092/mem:testdb");
-    log.info("用户名: sa");
-    log.info("密码: (空)");
+    log.info("Web控制台: {}", WEB_URL);
+    log.info("JDBC URL: {}", TCP_URL);
+    log.info("用户名: {}", USERNAME);
+    log.info("密码: {}", PASSWORD);
     log.info("===========================================");
   }
 
