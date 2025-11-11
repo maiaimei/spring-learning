@@ -25,10 +25,10 @@ public class H2Application {
   private static void printH2Info() {
     log.info("===========================================");
     log.info("H2数据库服务已启动");
-    log.info("Web控制台: {}", WEB_URL);
-    log.info("JDBC URL: {}", TCP_URL);
-    log.info("用户名: {}", USERNAME);
-    log.info("密码: {}", PASSWORD);
+    log.info("Web控制台: {}", H2_WEB_URL);
+    log.info("JDBC URL: {}", H2_TCP_URL);
+    log.info("用户名: {}", H2_USERNAME);
+    log.info("密码: {}", H2_PASSWORD);
     log.info("===========================================");
   }
 

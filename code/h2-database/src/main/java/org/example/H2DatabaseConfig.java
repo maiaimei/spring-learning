@@ -13,21 +13,21 @@ public class H2DatabaseConfig {
 
   @Bean
   public org.h2.tools.Server h2WebServer() throws java.sql.SQLException {
-    return org.h2.tools.Server.createWebServer(WEB_SERVER_ARGS).start();
+    return org.h2.tools.Server.createWebServer(H2_WEB_SERVER_ARGS).start();
   }
 
   @Bean
   public org.h2.tools.Server h2TcpServer() throws java.sql.SQLException {
-    return org.h2.tools.Server.createTcpServer(TCP_SERVER_ARGS).start();
+    return org.h2.tools.Server.createTcpServer(H2_TCP_SERVER_ARGS).start();
   }
 
   @Bean("localDataSource")
   public DataSource localDataSource() {
     HikariConfig config = new HikariConfig();
-    config.setDriverClassName(DRIVER_CLASS_NAME);
-    config.setJdbcUrl(MEMORY_URL);
-    config.setUsername(USERNAME);
-    config.setPassword(PASSWORD);
+    config.setDriverClassName(H2_DRIVER_CLASS_NAME);
+    config.setJdbcUrl(H2_MEMORY_URL);
+    config.setUsername(H2_USERNAME);
+    config.setPassword(H2_PASSWORD);
     config.setMaximumPoolSize(1);
     config.setMinimumIdle(1);
     return new HikariDataSource(config);
@@ -38,10 +38,10 @@ public class H2DatabaseConfig {
   @DependsOn({"h2TcpServer", "localDataSource"})
   public DataSource dataSource() {
     HikariConfig config = new HikariConfig();
-    config.setDriverClassName(DRIVER_CLASS_NAME);
-    config.setJdbcUrl(TCP_URL);
-    config.setUsername(USERNAME);
-    config.setPassword(PASSWORD);
+    config.setDriverClassName(H2_DRIVER_CLASS_NAME);
+    config.setJdbcUrl(H2_TCP_URL);
+    config.setUsername(H2_USERNAME);
+    config.setPassword(H2_PASSWORD);
     config.setMaximumPoolSize(10);
     config.setMinimumIdle(2);
     return new HikariDataSource(config);
