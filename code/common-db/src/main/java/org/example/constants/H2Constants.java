@@ -1,0 +1,42 @@
+package org.example.constants;
+
+import java.util.Objects;
+
+public final class H2Constants {
+
+  // 驱动和连接
+  public static final String DRIVER_CLASS_NAME = "org.h2.Driver";
+  public static final String URL_PREFIX = "jdbc:h2:";
+  public static final String MEMORY_URL_PREFIX = "jdbc:h2:mem:";
+  public static final String FILE_URL_PREFIX = "jdbc:h2:file:";
+  public static final String MEMORY_URL = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE";
+  public static final String TCP_URL = "jdbc:h2:tcp://localhost:9092/mem:testdb";
+  public static final String WEB_URL = "http://localhost:8082";
+
+  // 默认配置
+  public static final String DEFAULT_USERNAME = "sa";
+  public static final String DEFAULT_PASSWORD = "";
+  public static final String DEFAULT_SCHEMA = "PUBLIC";
+
+  // 连接参数
+  public static final String AUTO_SERVER_MODE = "AUTO_SERVER=TRUE";
+  public static final String DB_CLOSE_DELAY = "DB_CLOSE_DELAY=-1";
+
+  public static final String USERNAME = getProperty("H2_USERNAME", DEFAULT_USERNAME);
+  public static final String PASSWORD = getProperty("H2_PASSWORD", DEFAULT_PASSWORD);
+
+  public static final String[] WEB_SERVER_ARGS = new String[]{"-web", "-webAllowOthers", "-webPort", "8082"};
+  public static final String[] TCP_SERVER_ARGS = new String[]{"-tcp", "-tcpAllowOthers", "-tcpPort", "9092"};
+
+  private static String getProperty(String key, String defaultValue) {
+    String value = System.getProperty(key);
+    if (Objects.isNull(value)) {
+      value = System.getenv(key);
+    }
+    return Objects.nonNull(value) ? value : defaultValue;
+  }
+
+  private H2Constants() {
+    // 防止实例化
+  }
+}
