@@ -1,7 +1,5 @@
 package org.example.constants;
 
-import java.util.Objects;
-
 public final class H2Constants {
 
   // 驱动和连接
@@ -29,11 +27,7 @@ public final class H2Constants {
   public static final String[] H2_TCP_SERVER_ARGS = new String[]{"-tcp", "-tcpAllowOthers", "-tcpPort", "9092"};
 
   private static String getProperty(String key, String defaultValue) {
-    String value = System.getProperty(key);
-    if (Objects.isNull(value)) {
-      value = System.getenv(key);
-    }
-    return Objects.nonNull(value) ? value : defaultValue;
+    return System.getProperty(key, System.getenv().getOrDefault(key, defaultValue));
   }
 
   private H2Constants() {
