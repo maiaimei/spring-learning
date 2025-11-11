@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.example.model.Book;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.*;
@@ -18,6 +18,7 @@ import org.springframework.util.Assert;
 @Slf4j
 @ContextConfiguration(classes = {TestApplication.class})
 @ExtendWith(SpringExtension.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class JdbcTemplateTest {
 
   @Autowired
@@ -35,6 +36,7 @@ class JdbcTemplateTest {
   };
 
   @Test
+  @Order(1)
   void testCount() {
     String sql = "SELECT COUNT(*) FROM books";
     Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
@@ -43,6 +45,7 @@ class JdbcTemplateTest {
   }
 
   @Test
+  @Order(2)
   void testSelectAll() {
     String sql = "SELECT * FROM books";
     List<Book> books = jdbcTemplate.query(sql, BOOK_ROW_MAPPER);
@@ -52,6 +55,7 @@ class JdbcTemplateTest {
   }
 
   @Test
+  @Order(3)
   void testSelectById() {
     String sql = "SELECT * FROM books WHERE id = ?";
     Book book = jdbcTemplate.queryForObject(sql, BOOK_ROW_MAPPER, 1L);
@@ -60,6 +64,7 @@ class JdbcTemplateTest {
   }
 
   @Test
+  @Order(4)
   void testInsert() {
     String sql = "INSERT INTO books (title) VALUES (?)";
     int rows = jdbcTemplate.update(sql, "测试图书");
@@ -68,6 +73,7 @@ class JdbcTemplateTest {
   }
 
   @Test
+  @Order(5)
   void testUpdate() {
     String sql = "UPDATE books SET title = ? WHERE id = ?";
     int rows = jdbcTemplate.update(sql, "更新后的图书标题", 1L);
@@ -76,6 +82,7 @@ class JdbcTemplateTest {
   }
 
   @Test
+  @Order(6)
   void testDelete() {
     String sql = "DELETE FROM books WHERE title LIKE ?";
     int rows = jdbcTemplate.update(sql, "%测试%");
@@ -84,6 +91,7 @@ class JdbcTemplateTest {
   }
 
   @Test
+  @Order(7)
   void testBatchUpdate() {
     // 准备批量更新的数据
     List<Book> booksToInsert = Arrays.asList(
@@ -111,6 +119,7 @@ class JdbcTemplateTest {
   }
 
   @Test
+  @Order(8)
   void testBatchUpdateWithObjectArray() {
     String sql = "INSERT INTO books (title) VALUES (?)";
 
@@ -128,6 +137,7 @@ class JdbcTemplateTest {
   }
 
   @Test
+  @Order(9)
   void testInsertWithGeneratedKey() {
     String sql = "INSERT INTO books (title) VALUES (?)";
 
@@ -146,10 +156,7 @@ class JdbcTemplateTest {
 
     // 获取生成的ID - 使用getKeyAs方法指定字段名
     if (keyHolder.getKeys() != null && !keyHolder.getKeys().isEmpty()) {
-      Long generatedId = keyHolder.getKeyAs(Long.class);
-      log.info("自动生成的ID: {}", generatedId);
-
-      // 或者直接从keys map中获取ID字段
+      // 从keys map中获取ID字段
       Object idValue = keyHolder.getKeys().get("ID");
       log.info("从keys map获取的ID: {}", idValue);
     }
