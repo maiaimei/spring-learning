@@ -17,19 +17,19 @@ public class UserController {
                             schema = @io.swagger.v3.oas.annotations.media.Schema(ref = "#/components/schemas/Result")))
     })
     @GetMapping("/{id}")
-    public Result<String> getUser(@PathVariable Long id) {
+    public String getUser(@PathVariable Long id) {
         if (id <= 0) {
             throw new IllegalArgumentException("用户ID必须大于0");
         }
-        return Result.success("用户信息: ID=" + id);
+        return "用户信息: ID=" + id;
     }
 
     @Operation(summary = "创建用户", description = "创建新用户")
     @PostMapping
-    public Result<String> createUser(@RequestBody String username) {
+    public String createUser(@RequestBody String username) {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("用户名不能为空");
         }
-        return Result.success("用户创建成功: " + username);
+        return "用户创建成功: " + username;
     }
 }

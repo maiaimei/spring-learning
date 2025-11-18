@@ -1,4 +1,4 @@
-package com.example.exception;
+package com.example.advice;
 
 import com.example.model.Result;
 import io.swagger.v3.oas.annotations.Hidden;
