@@ -178,9 +178,19 @@ public class AdvancedOpenApiConfig {
       operation.setResponses(responses);
     }
 
-    // 只添加不存在的响应码
-    Map<String, ApiResponse> responseMap = responses;
+    // 检查是否有自定义@ApiResponses注解
+    boolean hasCustomResponses = responses.size() > 0;
 
+    // 如果没有自定义响应，添加统一响应包装
+    if (!hasCustomResponses) {
+      responses.addApiResponse("200", new ApiResponse()
+          .description("操作成功")
+          .content(new Content().addMediaType("application/json",
+              new MediaType().schema(new Schema<>().$ref("#/components/schemas/SuccessResult")))));
+    }
+
+    // 添加全局错误响应
+    Map<String, ApiResponse> responseMap = responses;
     if (!responseMap.containsKey("400")) {
       responses.addApiResponse("400", new ApiResponse().$ref("#/components/responses/BadRequest"));
     }
