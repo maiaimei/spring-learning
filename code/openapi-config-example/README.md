@@ -8,7 +8,7 @@
 mvn spring-boot:run
 ```
 
-访问 API 文档：<http://localhost:8080/swagger-ui.html>
+访问 API 文档：<http://localhost:8080/swagger-ui/index.html>
 访问 ：<http://localhost:8080/v3/api-docs>
 
 ## 核心功能
@@ -48,3 +48,14 @@ mvn spring-boot:run
 - 403: 禁止访问
 - 404: 资源未找到
 - 500: 服务器内部错误
+
+```
+// springdoc配置对应的类
+org.springdoc.core.properties.SpringDocConfigProperties
+
+// swagger-ui配置对应的类  
+org.springdoc.core.properties.SwaggerUiConfigProperties
+
+// api-docs配置对应的类
+org.springdoc.core.properties.SpringDocConfigProperties
+```
