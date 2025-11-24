@@ -139,8 +139,6 @@ public interface PlatformTransactionManager extends TransactionManager {
 
 ![](./images/Spring-Transaction-20251108-114547.png)
 
-![](./images/PlatformTransactionManager-20251109-162633.png)
-
 ## spring-tx
 
 **`spring-tx`** JAR 提供Spring事务管理的核心功能：
