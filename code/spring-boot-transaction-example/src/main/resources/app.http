@@ -1,0 +1,55 @@
+#============================ Spring Transaction Propagation Tests ============================#
+
+### Test REQUIRED propagation
+GET http://localhost:8080/transaction/required
+
+### Test SUPPORTS propagation
+GET http://localhost:8080/transaction/supports
+
+### Test MANDATORY propagation
+GET http://localhost:8080/transaction/mandatory
+
+### Test REQUIRES_NEW propagation
+GET http://localhost:8080/transaction/requires-new
+
+### Test NOT_SUPPORTED propagation
+GET http://localhost:8080/transaction/not-supported
+
+### Test NEVER propagation
+GET http://localhost:8080/transaction/never
+
+### Test NESTED propagation
+GET http://localhost:8080/transaction/nested
+
+### Test REQUIRED with nested transaction
+GET http://localhost:8080/transaction/required-with-nested
+
+### Test REQUIRED with REQUIRES_NEW
+GET http://localhost:8080/transaction/required-with-required-new
+
+#============================ Book API Tests ============================#
+
+### Get all books
+GET http://localhost:8080/api/books
+
+### Get book by ID
+GET http://localhost:8080/api/books/1
+
+### Create new book
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Spring Boot实战"
+}
+
+### Update book
+PUT http://localhost:8080/api/books/1
+Content-Type: application/json
+
+{
+  "title": "Spring Boot实战 - 更新版"
+}
+
+### Delete book
+DELETE http://localhost:8080/api/books/1

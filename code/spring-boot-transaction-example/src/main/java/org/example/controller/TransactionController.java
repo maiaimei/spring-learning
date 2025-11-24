@@ -48,12 +48,12 @@ public class TransactionController {
     return transactionService.testNested();
   }
 
-  @GetMapping("/required-nested")
+  @GetMapping("/required-with-nested")
   public String testRequiredWithNested() {
     return transactionService.testRequiredWithNested();
   }
 
-  @GetMapping("/required-new")
+  @GetMapping("/required-with-required-new")
   public String testRequiredWithRequiresNew() {
     return transactionService.testRequiredWithRequiresNew();
   }
