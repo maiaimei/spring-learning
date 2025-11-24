@@ -1,0 +1,157 @@
+@startuml PlatformTransactionManager Class Diagram
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageFontSize 14
+
+package "org.springframework.transaction" {
+    
+    interface TransactionManager {
+    }
+    
+    interface PlatformTransactionManager {
+        +getTransaction(definition: TransactionDefinition): TransactionStatus
+        +commit(status: TransactionStatus): void
+        +rollback(status: TransactionStatus): void
+    }
+    
+    interface TransactionDefinition {
+        +PROPAGATION_REQUIRED: int
+        +PROPAGATION_SUPPORTS: int
+        +PROPAGATION_MANDATORY: int
+        +PROPAGATION_REQUIRES_NEW: int
+        +PROPAGATION_NOT_SUPPORTED: int
+        +PROPAGATION_NEVER: int
+        +PROPAGATION_NESTED: int
+        +ISOLATION_DEFAULT: int
+        +ISOLATION_READ_UNCOMMITTED: int
+        +ISOLATION_READ_COMMITTED: int
+        +ISOLATION_REPEATABLE_READ: int
+        +ISOLATION_SERIALIZABLE: int
+        +TIMEOUT_DEFAULT: int
+        +getPropagationBehavior(): int
+        +getIsolationLevel(): int
+        +getTimeout(): int
+        +isReadOnly(): boolean
+        +getName(): String
+    }
+
+    interface TransactionAttribute {
+        +getQualifier(): String
+        +getLabels(): Collection<String>
+        +rollbackOn(ex: Throwable): boolean
+    }
+    
+    class DefaultTransactionDefinition {
+        -propagationBehavior: int
+        -isolationLevel: int
+        -timeout: int
+        -readOnly: boolean
+        -name: String
+        +DefaultTransactionDefinition()
+        +DefaultTransactionDefinition(propagationBehavior: int)
+        +DefaultTransactionDefinition(other: TransactionDefinition)
+        +setPropagationBehavior(propagationBehavior: int): void
+        +setIsolationLevel(isolationLevel: int): void
+        +setTimeout(timeout: int): void
+        +setReadOnly(readOnly: boolean): void
+        +setName(name: String): void
+    }
+    
+    class DefaultTransactionAttribute {
+        -descriptor: String
+        -timeoutString: String
+        -qualifier: String
+        -labels: Collection<String>
+        +DefaultTransactionAttribute()
+        +DefaultTransactionAttribute(propagationBehavior: int)
+        +DefaultTransactionAttribute(other: TransactionAttribute)
+        +setDescriptor(descriptor: String): void
+        +setTimeoutString(timeoutString: String): void
+        +setQualifier(qualifier: String): void
+        +setLabels(labels: Collection<String>): void
+    }
+    
+    interface TransactionStatus {
+        +hasSavepoint(): boolean
+        +flush(): void
+    }
+    
+    interface TransactionExecution {
+        +getTransactionName(): String
+        +hasTransaction(): boolean
+        +isNewTransaction(): boolean
+        +isNested(): boolean
+        +isReadOnly(): boolean
+        +setRollbackOnly(): void
+        +isRollbackOnly(): boolean
+        +isCompleted(): boolean
+    }
+    
+    interface SavepointManager {
+        +createSavepoint(): Object
+        +rollbackToSavepoint(savepoint: Object): void
+        +releaseSavepoint(savepoint: Object): void
+    }
+    
+    interface Flushable {
+        +flush(): void
+    }
+
+    abstract class AbstractTransactionStatus {
+        -savepoint: Object
+        -completed: boolean
+        -rollbackOnly: boolean
+        +createAndHoldSavepoint(): void
+        +releaseHeldSavepoint(): void
+        +rollbackToHeldSavepoint(): void
+    }
+    
+    class DefaultTransactionStatus {
+        -transactionName: String
+        -transaction: Object
+        -newTransaction: boolean
+        -newSynchronization: boolean
+        -nested: boolean
+        -readOnly: boolean
+        -debug: boolean
+        -suspendedResources: Object
+        +DefaultTransactionStatus(transactionName: String, transaction: Object, newTransaction: boolean, newSynchronization: boolean, nested: boolean, readOnly: boolean, debug: boolean, suspendedResources: Object)
+        +getTransaction(): Object
+        +hasTransaction(): boolean
+    }
+}
+
+' Inheritance relationships
+TransactionManager <|-- PlatformTransactionManager
+TransactionDefinition <|.. DefaultTransactionDefinition
+DefaultTransactionDefinition <|-- DefaultTransactionAttribute
+TransactionAttribute <|.. DefaultTransactionAttribute
+TransactionExecution <|-- TransactionStatus
+SavepointManager <|-- TransactionStatus
+Flushable <|-- TransactionStatus
+TransactionStatus <|.. AbstractTransactionStatus
+AbstractTransactionStatus <|-- DefaultTransactionStatus
+
+
+' Usage relationships
+PlatformTransactionManager ..> TransactionDefinition : uses
+PlatformTransactionManager ..> TransactionStatus : creates/uses
+
+note top of PlatformTransactionManager
+  Central interface for Spring's 
+  transaction infrastructure
+end note
+
+note top of TransactionDefinition
+  Interface that defines Spring-compliant 
+  transaction properties
+end note
+
+note top of DefaultTransactionStatus
+  Default implementation of TransactionStatus
+  that holds transaction state and savepoints
+end note
+
+@enduml

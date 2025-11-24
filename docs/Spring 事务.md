@@ -135,11 +135,11 @@ public interface PlatformTransactionManager extends TransactionManager {
 
 ![](./images/Spring-Transaction-20251108-114102.png)
 
+![](./images/TransactionStatus-20251109-171448.png)
+
 ![](./images/Spring-Transaction-20251108-114547.png)
 
-![](./images/PlatformTransactionManger-20251109-162633.png)
-
-![](./images/TransactionStatus-20251109-171448.png)
+![](./images/PlatformTransactionManager-20251109-162633.png)
 
 ## spring-tx
 
