@@ -10,41 +10,51 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/transaction")
 public class TransactionController {
 
-    @Autowired
-    private TransactionService transactionService;
+  @Autowired
+  private TransactionService transactionService;
 
-    @GetMapping("/required")
-    public String testRequired() {
-        return transactionService.testRequired();
-    }
+  @GetMapping("/required")
+  public String testRequired() {
+    return transactionService.testRequired();
+  }
 
-    @GetMapping("/supports")
-    public String testSupports() {
-        return transactionService.testSupports();
-    }
+  @GetMapping("/supports")
+  public String testSupports() {
+    return transactionService.testSupports();
+  }
 
-    @GetMapping("/mandatory")
-    public String testMandatory() {
-        return transactionService.testMandatory();
-    }
+  @GetMapping("/mandatory")
+  public String testMandatory() {
+    return transactionService.testMandatory();
+  }
 
-    @GetMapping("/requires-new")
-    public String testRequiresNew() {
-        return transactionService.testRequiresNew();
-    }
+  @GetMapping("/requires-new")
+  public String testRequiresNew() {
+    return transactionService.testRequiresNew();
+  }
 
-    @GetMapping("/not-supported")
-    public String testNotSupported() {
-        return transactionService.testNotSupported();
-    }
+  @GetMapping("/not-supported")
+  public String testNotSupported() {
+    return transactionService.testNotSupported();
+  }
 
-    @GetMapping("/never")
-    public String testNever() {
-        return transactionService.testNever();
-    }
+  @GetMapping("/never")
+  public String testNever() {
+    return transactionService.testNever();
+  }
 
-    @GetMapping("/nested")
-    public String testNested() {
-        return transactionService.testNested();
-    }
+  @GetMapping("/nested")
+  public String testNested() {
+    return transactionService.testNested();
+  }
+
+  @GetMapping("/required-nested")
+  public String testRequiredWithNested() {
+    return transactionService.testRequiredWithNested();
+  }
+
+  @GetMapping("/required-new")
+  public String testRequiredWithRequiresNew() {
+    return transactionService.testRequiredWithRequiresNew();
+  }
 }
