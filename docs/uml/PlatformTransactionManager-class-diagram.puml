@@ -1,6 +1,9 @@
 @startuml PlatformTransactionManager Class Diagram
-
 !theme plain
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classFontName "Microsoft YaHei"
+skinparam packageFontName "Microsoft YaHei"
+skinparam noteFontName "Microsoft YaHei"
 skinparam classAttributeIconSize 0
 skinparam classFontSize 11
 skinparam packageFontSize 14
