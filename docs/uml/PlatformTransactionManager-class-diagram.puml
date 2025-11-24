@@ -2,34 +2,41 @@
 
 !theme plain
 skinparam classAttributeIconSize 0
-skinparam classFontSize 12
+skinparam classFontSize 11
 skinparam packageFontSize 14
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 60
 
 package "org.springframework.transaction" {
     
+    ' 顶层事务管理器接口
     interface TransactionManager {
+        {abstract} 标记接口，所有事务管理器的根接口
     }
     
+    ' 平台事务管理器 - 核心接口
     interface PlatformTransactionManager {
         +getTransaction(definition: TransactionDefinition): TransactionStatus
         +commit(status: TransactionStatus): void
         +rollback(status: TransactionStatus): void
+        --
+        Spring事务基础设施的核心接口
+        提供编程式事务管理的基本操作
     }
     
+    ' 事务定义接口
     interface TransactionDefinition {
-        +PROPAGATION_REQUIRED: int
-        +PROPAGATION_SUPPORTS: int
-        +PROPAGATION_MANDATORY: int
-        +PROPAGATION_REQUIRES_NEW: int
-        +PROPAGATION_NOT_SUPPORTED: int
-        +PROPAGATION_NEVER: int
-        +PROPAGATION_NESTED: int
-        +ISOLATION_DEFAULT: int
-        +ISOLATION_READ_UNCOMMITTED: int
-        +ISOLATION_READ_COMMITTED: int
-        +ISOLATION_REPEATABLE_READ: int
-        +ISOLATION_SERIALIZABLE: int
-        +TIMEOUT_DEFAULT: int
+        +{static}PROPAGATION_REQUIRED: int = 0
+        +{static}PROPAGATION_SUPPORTS: int = 1
+        +{static}PROPAGATION_MANDATORY: int = 2
+        +{static}PROPAGATION_REQUIRES_NEW: int = 3
+        +{static}PROPAGATION_NOT_SUPPORTED: int = 4
+        +{static}PROPAGATION_NEVER: int = 5
+        +{static}PROPAGATION_NESTED: int = 6
+        +{static}ISOLATION_DEFAULT: int = -1
+        +{static}TIMEOUT_DEFAULT: int = -1
+        --
         +getPropagationBehavior(): int
         +getIsolationLevel(): int
         +getTimeout(): int
@@ -37,21 +44,26 @@ package "org.springframework.transaction" {
         +getName(): String
     }
 
+    ' 事务属性接口（扩展事务定义）
     interface TransactionAttribute {
         +getQualifier(): String
         +getLabels(): Collection<String>
         +rollbackOn(ex: Throwable): boolean
+        --
+        扩展TransactionDefinition
+        添加回滚规则和限定符
     }
     
+    ' 默认事务定义实现
     class DefaultTransactionDefinition {
         -propagationBehavior: int
         -isolationLevel: int
         -timeout: int
         -readOnly: boolean
         -name: String
+        --
         +DefaultTransactionDefinition()
         +DefaultTransactionDefinition(propagationBehavior: int)
-        +DefaultTransactionDefinition(other: TransactionDefinition)
         +setPropagationBehavior(propagationBehavior: int): void
         +setIsolationLevel(isolationLevel: int): void
         +setTimeout(timeout: int): void
@@ -59,99 +71,139 @@ package "org.springframework.transaction" {
         +setName(name: String): void
     }
     
+    ' 默认事务属性实现
     class DefaultTransactionAttribute {
-        -descriptor: String
-        -timeoutString: String
         -qualifier: String
         -labels: Collection<String>
+        -rollbackRules: List<RollbackRuleAttribute>
+        --
         +DefaultTransactionAttribute()
         +DefaultTransactionAttribute(propagationBehavior: int)
-        +DefaultTransactionAttribute(other: TransactionAttribute)
-        +setDescriptor(descriptor: String): void
-        +setTimeoutString(timeoutString: String): void
         +setQualifier(qualifier: String): void
         +setLabels(labels: Collection<String>): void
+        +rollbackOn(ex: Throwable): boolean
     }
     
-    interface TransactionStatus {
-        +hasSavepoint(): boolean
-        +flush(): void
-    }
-    
+    ' 事务执行接口
     interface TransactionExecution {
-        +getTransactionName(): String
-        +hasTransaction(): boolean
         +isNewTransaction(): boolean
-        +isNested(): boolean
-        +isReadOnly(): boolean
         +setRollbackOnly(): void
         +isRollbackOnly(): boolean
         +isCompleted(): boolean
+        --
+        定义事务执行状态的基本操作
     }
     
+    ' 保存点管理器接口
     interface SavepointManager {
         +createSavepoint(): Object
         +rollbackToSavepoint(savepoint: Object): void
         +releaseSavepoint(savepoint: Object): void
+        --
+        管理事务保存点的操作
     }
     
+    ' 可刷新接口
     interface Flushable {
         +flush(): void
-    }
-
-    abstract class AbstractTransactionStatus {
-        -savepoint: Object
-        -completed: boolean
-        -rollbackOnly: boolean
-        +createAndHoldSavepoint(): void
-        +releaseHeldSavepoint(): void
-        +rollbackToHeldSavepoint(): void
+        --
+        提供刷新操作，通常用于持久化上下文
     }
     
+    ' 事务状态接口
+    interface TransactionStatus {
+        +hasSavepoint(): boolean
+        +flush(): void
+        --
+        表示事务的状态信息
+        继承TransactionExecution的所有方法
+    }
+    
+    ' 默认事务状态实现
     class DefaultTransactionStatus {
-        -transactionName: String
         -transaction: Object
         -newTransaction: boolean
         -newSynchronization: boolean
-        -nested: boolean
         -readOnly: boolean
         -debug: boolean
         -suspendedResources: Object
-        +DefaultTransactionStatus(transactionName: String, transaction: Object, newTransaction: boolean, newSynchronization: boolean, nested: boolean, readOnly: boolean, debug: boolean, suspendedResources: Object)
+        -savepoint: Object
+        --
+        +DefaultTransactionStatus(transaction: Object, newTransaction: boolean, ...)
         +getTransaction(): Object
         +hasTransaction(): boolean
+        +createAndHoldSavepoint(): void
+        +rollbackToHeldSavepoint(): void
+        +releaseHeldSavepoint(): void
     }
 }
 
-' Inheritance relationships
-TransactionManager <|-- PlatformTransactionManager
-TransactionDefinition <|.. DefaultTransactionDefinition
-DefaultTransactionDefinition <|-- DefaultTransactionAttribute
-TransactionAttribute <|.. DefaultTransactionAttribute
-TransactionExecution <|-- TransactionStatus
-SavepointManager <|-- TransactionStatus
-Flushable <|-- TransactionStatus
-TransactionStatus <|.. AbstractTransactionStatus
-AbstractTransactionStatus <|-- DefaultTransactionStatus
+' === 继承关系 ===
+' 接口继承
+TransactionManager <|-- PlatformTransactionManager : extends
+TransactionDefinition <|-- TransactionAttribute : extends
+TransactionExecution <|-- TransactionStatus : extends
+SavepointManager <|-- TransactionStatus : extends  
+Flushable <|-- TransactionStatus : extends
 
+' 实现关系
+TransactionDefinition <|.. DefaultTransactionDefinition : implements
+TransactionAttribute <|.. DefaultTransactionAttribute : implements
+TransactionStatus <|.. DefaultTransactionStatus : implements
 
-' Usage relationships
-PlatformTransactionManager ..> TransactionDefinition : uses
-PlatformTransactionManager ..> TransactionStatus : creates/uses
+' 类继承
+DefaultTransactionDefinition <|-- DefaultTransactionAttribute : extends
 
-note top of PlatformTransactionManager
-  Central interface for Spring's 
-  transaction infrastructure
+' === 使用关系 ===
+PlatformTransactionManager ..> TransactionDefinition : 使用定义创建事务
+PlatformTransactionManager ..> TransactionStatus : 返回事务状态
+DefaultTransactionStatus ..> SavepointManager : 实现保存点管理
+DefaultTransactionStatus ..> Flushable : 实现刷新功能
+
+' === 布局提示 ===
+TransactionManager -[hidden]-> TransactionDefinition
+TransactionDefinition -[hidden]-> TransactionAttribute
+TransactionExecution -[hidden]-> SavepointManager
+SavepointManager -[hidden]-> Flushable
+
+' === 注释说明 ===
+note top of TransactionManager
+  <b>事务管理器标记接口</b>
+  所有Spring事务管理器的根接口
+  用于标识事务管理器组件
 end note
 
-note top of TransactionDefinition
-  Interface that defines Spring-compliant 
-  transaction properties
+note right of PlatformTransactionManager
+  <b>平台事务管理器</b>
+  • Spring事务基础设施的核心接口
+  • 提供编程式事务管理的基本操作
+  • 支持声明式事务管理
+  • 可以与不同的事务API集成
 end note
 
-note top of DefaultTransactionStatus
-  Default implementation of TransactionStatus
-  that holds transaction state and savepoints
+note left of TransactionDefinition
+  <b>事务定义</b>
+  定义事务的属性：
+  • 传播行为(Propagation)
+  • 隔离级别(Isolation)
+  • 超时时间(Timeout)
+  • 只读标志(ReadOnly)
+end note
+
+note bottom of DefaultTransactionStatus
+  <b>默认事务状态实现</b>
+  • 持有实际的事务对象
+  • 管理事务的生命周期状态
+  • 支持嵌套事务和保存点
+  • 提供事务同步和资源管理
+end note
+
+note right of TransactionAttribute
+  <b>事务属性</b>
+  扩展TransactionDefinition：
+  • 添加回滚规则
+  • 支持事务限定符
+  • 用于声明式事务配置
 end note
 
 @enduml
