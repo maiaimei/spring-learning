@@ -34,7 +34,7 @@ public class TransactionIsolationTest {
   }
 
   @Test
-  void testReadUncommittedDirtyRead() throws Exception {
+  void testReadUncommitted() throws Exception {
     log.info("=== 测试READ_UNCOMMITTED隔离级别 - 脏读 ===");
 
     ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -97,7 +97,7 @@ public class TransactionIsolationTest {
   }
 
   @Test
-  void testReadCommittedNonRepeatableRead() throws Exception {
+  void testReadCommitted() throws Exception {
     log.info("=== 测试READ_COMMITTED隔离级别 - 不可重复读 ===");
 
     ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -150,7 +150,7 @@ public class TransactionIsolationTest {
   }
 
   @Test
-  void testRepeatableReadPhantomRead() throws Exception {
+  void testRepeatableRead() throws Exception {
     log.info("=== 测试REPEATABLE_READ隔离级别 - H2数据库幻读测试 ===");
     log.info("注意：H2数据库在REPEATABLE_READ级别下可能会出现幻读现象");
 
@@ -229,7 +229,7 @@ public class TransactionIsolationTest {
   }
 
   @Test
-  void testSerializableIsolation() throws Exception {
+  void testSerializable() throws Exception {
     log.info("=== 测试SERIALIZABLE隔离级别 - 最高隔离级别 ===");
 
     ExecutorService executor = Executors.newFixedThreadPool(2);

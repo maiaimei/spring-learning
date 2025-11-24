@@ -1,0 +1,6 @@
+logging:
+  level:
+    org.springframework.aop: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.springframework.transaction: DEBUG
+    com.zaxxer.hikari: DEBUG

@@ -1,5 +1,6 @@
 package org.example.model;
 
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,4 +12,5 @@ public class Book {
 
   private Long id;
   private String title;
+  private LocalDateTime createdAt;
 }
