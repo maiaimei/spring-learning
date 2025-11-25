@@ -30,6 +30,10 @@ public class TransactionPropagationTest {
     jdbcTemplate.execute("DELETE FROM books WHERE title LIKE '测试%'");
   }
 
+  /**
+   * Support a current transaction; create a new one if none exists.
+   * 如果当前没有事务，就新建一个事务；如果已经存在事务，则加入该事务。
+   */
   @Test
   void testRequired() {
     log.info("=== 测试REQUIRED传播机制 ===");

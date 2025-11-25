@@ -1,0 +1,161 @@
+@startuml TransactionSynchronizationManager类关系图
+
+!theme plain
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classFontName "Microsoft YaHei"
+skinparam packageFontName "Microsoft YaHei"
+skinparam noteFontName "Microsoft YaHei"
+skinparam linetype ortho
+
+title TransactionSynchronizationManager与PlatformTransactionManager关系图
+
+package "org.springframework.transaction.support" {
+    
+    class TransactionSynchronizationManager {
+        -{static}synchronizations: ThreadLocal<Set<TransactionSynchronization>>
+        -{static}resources: ThreadLocal<Map<Object, Object>>
+        -{static}actualTransactionActive: ThreadLocal<Boolean>
+        -{static}currentTransactionName: ThreadLocal<String>
+        -{static}currentTransactionReadOnly: ThreadLocal<Boolean>
+        -{static}currentTransactionIsolationLevel: ThreadLocal<Integer>
+        --
+        +{static}bindResource(key: Object, value: Object): void
+        +{static}unbindResource(key: Object): Object
+        +{static}getResource(key: Object): Object
+        +{static}hasResource(key: Object): boolean
+        --
+        +{static}registerSynchronization(synchronization: TransactionSynchronization): void
+        +{static}getSynchronizations(): List<TransactionSynchronization>
+        +{static}clearSynchronization(): void
+        --
+        +{static}setActualTransactionActive(active: boolean): void
+        +{static}isActualTransactionActive(): boolean
+        +{static}setCurrentTransactionReadOnly(readOnly: boolean): void
+        +{static}isCurrentTransactionReadOnly(): boolean
+        --
+        +{static}triggerBeforeCommit(readOnly: boolean): void
+        +{static}triggerBeforeCompletion(): void
+        +{static}triggerAfterCommit(): void
+        +{static}triggerAfterCompletion(completionStatus: int): void
+    }
+    
+    interface TransactionSynchronization {
+        +{static}STATUS_COMMITTED: int = 0
+        +{static}STATUS_ROLLED_BACK: int = 1
+        +{static}STATUS_UNKNOWN: int = 2
+        --
+        +suspend(): void
+        +resume(): void
+        +flush(): void
+        +beforeCommit(readOnly: boolean): void
+        +beforeCompletion(): void
+        +afterCommit(): void
+        +afterCompletion(status: int): void
+    }
+    
+    abstract class AbstractPlatformTransactionManager {
+        #doGetTransaction(): Object
+        #isExistingTransaction(transaction: Object): boolean
+        #doBegin(transaction: Object, definition: TransactionDefinition): void
+        #doSuspend(transaction: Object): Object
+        #doResume(transaction: Object, suspendedResources: Object): void
+        #doCommit(status: DefaultTransactionStatus): void
+        #doRollback(status: DefaultTransactionStatus): void
+        --
+        -triggerBeforeCommit(status: DefaultTransactionStatus): void
+        -triggerBeforeCompletion(status: DefaultTransactionStatus): void
+        -triggerAfterCommit(status: DefaultTransactionStatus): void
+        -triggerAfterCompletion(status: DefaultTransactionStatus, completionStatus: int): void
+    }
+}
+
+package "org.springframework.transaction" {
+    interface PlatformTransactionManager {
+        +getTransaction(definition: TransactionDefinition): TransactionStatus
+        +commit(status: TransactionStatus): void
+        +rollback(status: TransactionStatus): void
+    }
+    
+    interface TransactionDefinition {
+        +getPropagationBehavior(): int
+        +getIsolationLevel(): int
+        +getTimeout(): int
+        +isReadOnly(): boolean
+        +getName(): String
+    }
+    
+    interface TransactionStatus {
+        +isNewTransaction(): boolean
+        +hasSavepoint(): boolean
+        +setRollbackOnly(): void
+        +isRollbackOnly(): boolean
+        +isCompleted(): boolean
+    }
+}
+
+package "具体实现" {
+    class DataSourceTransactionManager {
+        -dataSource: DataSource
+        --
+        #doGetTransaction(): DataSourceTransactionObject
+        #doBegin(transaction: Object, definition: TransactionDefinition): void
+        #doCommit(status: DefaultTransactionStatus): void
+        #doRollback(status: DefaultTransactionStatus): void
+    }
+    
+    class JpaTransactionManager {
+        -entityManagerFactory: EntityManagerFactory
+        --
+        #doGetTransaction(): JpaTransactionObject
+        #doBegin(transaction: Object, definition: TransactionDefinition): void
+        #doCommit(status: DefaultTransactionStatus): void
+        #doRollback(status: DefaultTransactionStatus): void
+    }
+}
+
+' 继承关系
+PlatformTransactionManager <|.. AbstractPlatformTransactionManager
+AbstractPlatformTransactionManager <|-- DataSourceTransactionManager
+AbstractPlatformTransactionManager <|-- JpaTransactionManager
+
+' 使用关系
+AbstractPlatformTransactionManager ..> TransactionSynchronizationManager : 调用同步管理方法
+TransactionSynchronizationManager o-- TransactionSynchronization : 管理同步回调
+AbstractPlatformTransactionManager ..> TransactionDefinition : 使用事务定义
+AbstractPlatformTransactionManager ..> TransactionStatus : 创建和管理事务状态
+
+' 布局提示
+TransactionSynchronizationManager -[hidden]-> TransactionSynchronization
+PlatformTransactionManager -[hidden]-> TransactionDefinition
+
+note top of TransactionSynchronizationManager
+  <b>事务同步管理器</b>
+  • 基于ThreadLocal的线程级事务状态管理
+  • 资源绑定和解绑(数据库连接、Session等)
+  • 事务同步回调的注册和触发
+  • 事务状态信息的维护
+end note
+
+note right of AbstractPlatformTransactionManager
+  <b>抽象事务管理器</b>
+  • 实现事务管理的通用逻辑
+  • 调用TransactionSynchronizationManager
+  • 管理事务的完整生命周期
+  • 处理事务传播和挂起/恢复
+end note
+
+note bottom of TransactionSynchronization
+  <b>事务同步回调接口</b>
+  • 定义事务生命周期回调方法
+  • 支持资源清理、缓存刷新等操作
+  • 在事务的不同阶段被调用
+end note
+
+note left of DataSourceTransactionManager
+  <b>具体事务管理器实现</b>
+  • 针对特定资源的事务管理
+  • 通过父类与同步管理器交互
+  • 实现具体的事务操作
+end note
+
+@enduml

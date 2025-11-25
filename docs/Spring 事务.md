@@ -131,93 +131,17 @@ public interface PlatformTransactionManager extends TransactionManager {
 }
 ```
 
-## 事务处理架构
-
 ![](./images/Spring-Transaction-20251108-114102.png)
 
 ![](./images/TransactionStatus-20251109-171448.png)
 
 ![](./images/Spring-Transaction-20251108-114547.png)
 
-## spring-tx
+## 事务传播机制（Propagation）
 
-**`spring-tx`** JAR 提供Spring事务管理的核心功能：
+**事务传播机制核心在于控制事务的边界和多个事务方法之间的协作关系。**
 
-- **声明式事务管理** - 使用 `@Transactional` 注解
-- **编程式事务管理** - 通过 `TransactionTemplate` 手动控制事务
-- **事务抽象层** - 为不同事务管理器（JPA、JDBC、JMS等）提供统一API
-- **事务传播机制** - 控制方法调用时事务的行为
-- **事务隔离级别** - 支持多种数据库隔离级别
-- **回滚规则** - 灵活的异常回滚配置
-
-Maven依赖：
-
-```xml
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-tx</artifactId>
-</dependency>
-```
-
-**注意**：使用Spring Boot时，该依赖通常通过 `spring-boot-starter-jdbc`、`spring-boot-starter-data-jpa` 等starter自动包含。
-
-# Spring声明式事务
-
-**`@Transactional`** 是Spring框架提供的声明式事务管理注解，用于自动将方法或类包装在数据库事务中。
-
-## 注解定义
-
-```java
-package org.springframework.transaction.annotation;
-
-@Target({ElementType.TYPE, ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
-@Inherited
-@Documented
-@Reflective
-public @interface Transactional {
-    
-    @AliasFor("transactionManager")
-  String value() default "";
-    @AliasFor("value")
-  String transactionManager() default "";  
-    
-    String[] label() default {}; 
-    
-    Propagation propagation() default Propagation.REQUIRED; 
-    
-    Isolation isolation() default Isolation.DEFAULT;
-    
-    int timeout() default TransactionDefinition.TIMEOUT_DEFAULT;
-    String timeoutString() default "";
-    
-    boolean readOnly() default false;
-    
-    Class<? extends Throwable>[] rollbackFor() default {};
-    String[] rollbackForClassName() default {};
-    
-    Class<? extends Throwable>[] noRollbackFor() default {};
-    String[] noRollbackForClassName() default {};
-}
-```
-
-## 注解属性详解
-
-### 事务管理器（Transaction Manager）
-
-```java
-// 指定事务管理器
-@Transactional("customTransactionManager")
-public void method1() { }
-
-// 等价写法
-@Transactional(transactionManager = "customTransactionManager")
-public void method2() { }
-```
-
-### 事务传播机制（Propagation）
-
-**事务传播机制核心在于控制事务的边界和多个事务方法之间的协作关系。**例如，当方法A（已开启事务）调用方法B（也需要事务管理）时，方法B是继续使用A的事务，还是自己新开一个事务，或是其他处理方式。
+例如，当方法A（已开启事务）调用方法B（也需要事务管理）时，方法B是继续使用A的事务，还是自己新开一个事务，或是其他处理方式。
 
 |      | 传播行为          | 说明                                                         | 使用场景               |
 | ---- | ----------------- | ------------------------------------------------------------ | ---------------------- |
@@ -229,7 +153,7 @@ public void method2() { }
 | 6    | **NEVER**         | Execute non-transactionally, throw an exception if a transaction exists. <br />以非事务方式执行，如果当前存在事务，则抛出异常。 | 绝对不能在事务中的操作 |
 | 7    | **NESTED**        | Execute within a nested transaction if a current transaction exists, behave like REQUIRED otherwise.<br />如果当前存在父级事务，则当前子业务中的事务会自动成为该父级事务中的一个子事务，只有在父级事务提交后才会提交子事务。如果子事务产生异常则可以交由父级调用进行异常处理，如果父级事务产生异常，则其也会回滚。<br />简化理解：所有的事务统一交给调用业务处处理。<br />如果当前没有事务，等同于REQUIRED。 | 部分回滚场景           |
 
-### 事务隔离级别（Isolation）
+## 事务隔离级别（Isolation）
 
 **什么是事务隔离级别？**
 
@@ -245,13 +169,14 @@ public void method2() { }
 
 如果没有隔离控制，就会出现数据混乱的问题。
 
-**常见的并发问题详解：**
+### 常见并发问题
 
-#### 1. 脏读（Dirty Read）
+#### 脏读（Dirty Read）
 
 **定义**：读取的是**未提交**的数据
 
 **特征**：
+
 - 读到的数据可能是"假的"，因为写事务可能会回滚
 - 就像看到别人写了一半的草稿，内容可能随时被撤销
 - 可能读到完全错误的数据，基于错误数据做决策会导致严重后果
@@ -260,11 +185,12 @@ public void method2() { }
 
 **记忆技巧**："脏"=不干净=未提交=可能是假的
 
-#### 2. 不可重复读（Non-Repeatable Read）
+#### 不可重复读（Non-Repeatable Read）
 
 **定义**：读取的是**已提交**的数据，针对**已存在的具体记录**
 
 **特征**：
+
 - 读到的数据都是"真的"，只是在事务期间被其他事务修改了
 - 关注的是同一条记录的**值**是否发生变化
 - 例如：用户ID=1的余额从1000变成800
@@ -274,11 +200,12 @@ public void method2() { }
 
 **记忆技巧**：数据是真的，但"重复读取结果不同"
 
-#### 3. 幻读（Phantom Read）
+#### 幻读（Phantom Read）
 
 **定义**：读取的是**已提交**的数据，针对**记录的数量**
 
 **特征**：
+
 - 关注的是查询结果集中**记录数**是否发生变化
 - 例如：符合条件的用户从10个变成12个
 - 通常由INSERT/DELETE操作引起
@@ -289,11 +216,11 @@ public void method2() { }
 
 **三大并发问题核心对比：**
 
-| 问题类型 | 数据状态 | 关注点 | 触发操作 | 解决方案 | 记忆口诀 |
-|---------|---------|--------|----------|----------|----------|
-| **脏读** | 未提交数据 | 数据真假性 | ROLLBACK | 使用READ_COMMITTED及以上隔离级别 | 读到假数据 |
-| **不可重复读** | 已提交数据 | 记录值变化 | UPDATE | 行级锁 | 内容变了 |
-| **幻读** | 已提交数据 | 记录数量变化 | INSERT/DELETE | 范围锁/间隙锁 | 数量变了 |
+| 问题类型       | 数据状态   | 关注点       | 触发操作      | 解决方案                         | 记忆口诀   |
+| -------------- | ---------- | ------------ | ------------- | -------------------------------- | ---------- |
+| **脏读**       | 未提交数据 | 数据真假性   | ROLLBACK      | 使用READ_COMMITTED及以上隔离级别 | 读到假数据 |
+| **不可重复读** | 已提交数据 | 记录值变化   | UPDATE        | 行级锁                           | 内容变了   |
+| **幻读**       | 已提交数据 | 记录数量变化 | INSERT/DELETE | 范围锁/间隙锁                    | 数量变了   |
 
 **场景示例：**
 
@@ -316,16 +243,17 @@ public void method2() { }
 结果：符合条件的记录数量变了
 ```
 
-#### 4. 四种隔离级别
+### 四种隔离级别
 
-| 隔离级别 | 解决问题 | 剩余问题 | 使用场景 | 性能 |
-|---------|---------|----------|----------|------|
-| READ_UNCOMMITTED | 无 | 脏读+不可重复读+幻读 | 几乎不用 | 最高 |
-| **READ_COMMITTED** | 脏读 | 不可重复读+幻读 | **最常用** | 较高 |
-| REPEATABLE_READ | 脏读+不可重复读 | 幻读 | 金融交易，MySQL默认 | 较低 |
-| SERIALIZABLE | 全部解决 | 无 | 极高要求场景 | 最低 |
+| 隔离级别           | 解决问题        | 剩余问题             | 使用场景            | 性能 |
+| ------------------ | --------------- | -------------------- | ------------------- | ---- |
+| READ_UNCOMMITTED   | 无              | 脏读+不可重复读+幻读 | 几乎不用            | 最高 |
+| **READ_COMMITTED** | 脏读            | 不可重复读+幻读      | **最常用**          | 较高 |
+| REPEATABLE_READ    | 脏读+不可重复读 | 幻读                 | 金融交易，MySQL默认 | 较低 |
+| SERIALIZABLE       | 全部解决        | 无                   | 极高要求场景        | 最低 |
 
 **应用示例：**
+
 ```java
 @Transactional // 默认级别，适合大多数场景
 @Transactional(isolation = Isolation.REPEATABLE_READ) // 金融交易
@@ -353,12 +281,13 @@ public void method2() { }
    - 如访问量统计、日志记录等
 
 **注意事项：**
+
 - 不同数据库对隔离级别的实现可能有差异
 - MySQL默认使用REPEATABLE_READ。
 - Oracle、PostgreSQL默认使用READ_COMMITTED
 - 可以在方法级别动态调整隔离级别
 
-#### 不同数据库查看事务隔离级别的方法
+**不同数据库查看事务隔离级别的方法**
 
 **MySQL**
 
@@ -484,38 +413,137 @@ void checkDatabaseIsolationLevel() {
 | SQL Server     | READ_COMMITTED  |
 | H2             | READ_COMMITTED  |
 
-### 标签（Label）
+## 事务同步管理器
 
-用于为事务添加描述性标签，便于监控和调试：
+Spring的`TransactionSynchronizationManager`是事务同步管理器，主要作用：
+
+###  **核心功能**
+
+**1. 事务状态管理**
+
+- 管理当前线程的事务状态信息
+- 跟踪事务是否激活、只读状态等
+- 提供事务隔离级别信息
+
+**2. 资源绑定管理**
+
+- 将数据库连接、Hibernate Session等资源绑定到当前线程
+- 确保同一事务中使用相同的资源实例
+- 事务结束时自动清理资源
+
+**3. 事务同步回调**
+
+- 注册事务生命周期回调函数
+- 在事务提交前/后、回滚前/后执行自定义逻辑
+- 支持资源清理、缓存刷新等操作
+
+###  **主要方法**
 
 ```java
-@Transactional(label = {"user-operation", "critical"})
-public void updateUserProfile(User user) {
-    // 业务逻辑
+// 事务状态检查
+TransactionSynchronizationManager.isActualTransactionActive()
+TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+
+// 资源绑定
+TransactionSynchronizationManager.bindResource(key, resource)
+TransactionSynchronizationManager.getResource(key)
+TransactionSynchronizationManager.unbindResource(key)
+
+// 同步回调注册
+TransactionSynchronizationManager.registerSynchronization(synchronization)
+```
+
+###  **使用场景**
+
+**1. 自定义事务感知组件**
+
+- 缓存管理器在事务提交后清理缓存
+- 消息发送在事务成功后执行
+- 审计日志记录
+
+**2. 资源管理**
+
+- 数据库连接池管理
+- JMS会话管理
+- 文件系统操作同步
+
+**3. 事务传播实现**
+
+- 支持不同的事务传播行为
+- 嵌套事务管理
+- 挂起和恢复事务
+
+###  **注意事项**
+
+- 基于ThreadLocal实现，线程安全
+- 主要供Spring内部使用，应用代码谨慎直接调用
+- 与Spring事务管理器紧密集成
+
+`TransactionSynchronizationManager`是Spring事务基础设施的核心组件，确保事务的一致性和资源的正确管理。
+
+## spring-tx
+
+**`spring-tx`** JAR 提供Spring事务管理的核心功能：
+
+- **声明式事务管理** - 使用 `@Transactional` 注解
+- **编程式事务管理** - 通过 `TransactionTemplate` 手动控制事务
+- **事务抽象层** - 为不同事务管理器（JPA、JDBC、JMS等）提供统一API
+- **事务传播机制** - 控制方法调用时事务的行为
+- **事务隔离级别** - 支持多种数据库隔离级别
+- **回滚规则** - 灵活的异常回滚配置
+
+Maven依赖：
+
+```xml
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-tx</artifactId>
+</dependency>
+```
+
+**注意**：使用Spring Boot时，该依赖通常通过 `spring-boot-starter-jdbc`、`spring-boot-starter-data-jpa` 等starter自动包含。
+
+# Spring声明式事务
+
+**`@Transactional`** 是Spring框架提供的声明式事务管理注解，用于自动将方法或类包装在数据库事务中。
+
+## 注解定义
+
+```java
+package org.springframework.transaction.annotation;
+
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@Documented
+@Reflective
+public @interface Transactional {
+    
+    @AliasFor("transactionManager")
+  String value() default "";
+    @AliasFor("value")
+  String transactionManager() default "";  
+    
+    String[] label() default {}; 
+    
+    Propagation propagation() default Propagation.REQUIRED; 
+    
+    Isolation isolation() default Isolation.DEFAULT;
+    
+    int timeout() default TransactionDefinition.TIMEOUT_DEFAULT;
+    String timeoutString() default "";
+    
+    boolean readOnly() default false;
+    
+    Class<? extends Throwable>[] rollbackFor() default {};
+    String[] rollbackForClassName() default {};
+    
+    Class<? extends Throwable>[] noRollbackFor() default {};
+    String[] noRollbackForClassName() default {};
 }
 ```
 
-### 超时设置（Timeout）
-
-```java
-// 设置超时时间（秒）
-@Transactional(timeout = 30)
-public void longRunningOperation() { }
-
-// 使用字符串形式（支持SpEL表达式）
-@Transactional(timeoutString = "${app.transaction.timeout}")
-public void configurableTimeout() { }
-```
-
-### 只读事务（Read Only）
-
-```java
-@Transactional(readOnly = true)
-public User findUser(Long id) {
-    // 只读事务，优化性能，防止意外修改
-    return userRepository.findById(id);
-}
-```
+## 注解属性
 
 ### 回滚规则（Rollback）
 

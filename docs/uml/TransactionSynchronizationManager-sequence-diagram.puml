@@ -1,0 +1,121 @@
+@startuml TransactionSynchronizationManager与PlatformTransactionManager交互时序图
+
+!theme plain
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequenceFontName "Microsoft YaHei"
+skinparam noteFontName "Microsoft YaHei"
+skinparam participantFontName "Microsoft YaHei"
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 150
+
+title Spring事务管理器交互时序图
+
+participant "业务代码" as Client
+participant "TransactionInterceptor\n(事务拦截器)" as Interceptor
+participant "PlatformTransactionManager\n(事务管理器)" as TxManager
+participant "TransactionSynchronizationManager\n(同步管理器)" as SyncManager
+participant "DataSource\n(数据源)" as DataSource
+participant "TransactionSynchronization\n(同步回调)" as Sync
+
+== 事务开始阶段 ==
+
+Client -> Interceptor: 调用@Transactional方法
+activate Interceptor
+
+Interceptor -> TxManager: getTransaction(definition)
+activate TxManager
+note right: 根据事务定义获取事务状态
+
+TxManager -> SyncManager: isActualTransactionActive()
+SyncManager --> TxManager: false (无活跃事务)
+
+TxManager -> DataSource: getConnection()
+activate DataSource
+DataSource --> TxManager: Connection
+deactivate DataSource
+
+TxManager -> SyncManager: bindResource(dataSource, connection)
+note right: 将数据库连接绑定到当前线程
+
+TxManager -> SyncManager: initSynchronization()
+note right: 初始化事务同步机制
+
+TxManager -> SyncManager: setActualTransactionActive(true)
+note right: 标记事务为活跃状态
+
+TxManager -> SyncManager: setCurrentTransactionReadOnly(false)
+note right: 设置事务读写状态
+
+TxManager --> Interceptor: TransactionStatus
+deactivate TxManager
+
+== 业务逻辑执行阶段 ==
+
+Interceptor -> Client: 执行业务方法
+activate Client
+
+Client -> SyncManager: registerSynchronization(callback)
+note right: 注册事务同步回调\n(如缓存清理、消息发送等)
+
+Client -> SyncManager: getResource(dataSource)
+SyncManager --> Client: Connection
+note right: 获取当前事务绑定的连接
+
+Client -> DataSource: 执行SQL操作
+note right: 使用同一个连接执行数据库操作
+
+Client --> Interceptor: 业务方法执行完成
+deactivate Client
+
+== 事务提交阶段 ==
+
+Interceptor -> TxManager: commit(status)
+activate TxManager
+
+TxManager -> SyncManager: triggerBeforeCommit(readOnly)
+SyncManager -> Sync: beforeCommit(readOnly)
+note right: 执行提交前回调
+
+TxManager -> DataSource: connection.commit()
+note right: 提交数据库事务
+
+TxManager -> SyncManager: triggerAfterCommit()
+SyncManager -> Sync: afterCommit()
+note right: 执行提交后回调\n(如清理缓存、发送消息)
+
+TxManager -> SyncManager: triggerAfterCompletion(STATUS_COMMITTED)
+SyncManager -> Sync: afterCompletion(STATUS_COMMITTED)
+note right: 执行完成后回调
+
+== 资源清理阶段 ==
+
+TxManager -> SyncManager: clearSynchronization()
+note right: 清理同步回调
+
+TxManager -> SyncManager: unbindResource(dataSource)
+note right: 解绑数据库连接
+
+TxManager -> DataSource: connection.close()
+note right: 关闭数据库连接
+
+TxManager -> SyncManager: setActualTransactionActive(false)
+note right: 标记事务为非活跃状态
+
+TxManager --> Interceptor: 事务提交完成
+deactivate TxManager
+
+Interceptor --> Client: 方法调用完成
+deactivate Interceptor
+
+== 异常回滚场景 ==
+
+note over Client, Sync
+  <b>如果业务方法抛出异常：</b>
+  1. TxManager.rollback(status)
+  2. SyncManager.triggerBeforeCompletion()
+  3. connection.rollback()
+  4. SyncManager.triggerAfterCompletion(STATUS_ROLLED_BACK)
+  5. 资源清理流程相同
+end note
+
+@enduml
