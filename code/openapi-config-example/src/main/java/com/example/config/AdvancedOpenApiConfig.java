@@ -100,18 +100,19 @@ public class AdvancedOpenApiConfig {
     components.addSchemas("SuccessResponse", successResponseSchema);
 
     // 添加错误响应Schema
-    components.addSchemas("BadRequestResponse", newErrorResponseSchema(400, "请求参数错误"));
-    components.addSchemas("UnauthorizedResponse", newErrorResponseSchema(401, "未授权访问"));
-    components.addSchemas("ForbiddenResponse", newErrorResponseSchema(403, "禁止访问"));
-    components.addSchemas("NotFoundResponse", newErrorResponseSchema(404, "资源未找到"));
-    components.addSchemas("ServerErrorResponse", newErrorResponseSchema(500, "服务器内部错误"));
+    components.addSchemas("BadRequestResponse", newErrorResponseSchema("请求参数错误", 400, "请求参数错误"));
+    components.addSchemas("UnauthorizedResponse", newErrorResponseSchema("未授权访问", 401, "未授权访问"));
+    components.addSchemas("ForbiddenResponse", newErrorResponseSchema("禁止访问", 403, "禁止访问"));
+    components.addSchemas("NotFoundResponse", newErrorResponseSchema("资源未找到", 404, "资源未找到"));
+    components.addSchemas("ServerErrorResponse", newErrorResponseSchema("服务器内部错误", 500, "服务器内部错误"));
   }
 
-  private Schema<?> newErrorResponseSchema(int httpStatusCode, String errorMessage) {
+  private Schema<?> newErrorResponseSchema(String description, int code, String message) {
     return new Schema<>()
         .type("object")
-        .addProperty("code", new Schema<>().type("integer").example(httpStatusCode).description("错误码"))
-        .addProperty("message", new Schema<>().type("string").example(errorMessage).description("错误消息"))
+        .description(description)
+        .addProperty("code", new Schema<>().type("integer").example(code).description("错误码"))
+        .addProperty("message", new Schema<>().type("string").example(message).description("错误消息"))
         .addProperty("path", new Schema<>().type("string").example("/api/example").description("请求路径"))
         .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("错误时间"));
   }
@@ -119,7 +120,7 @@ public class AdvancedOpenApiConfig {
   private void addGlobalResponses(Components components) {
     // 400 错误响应
     ApiResponse badRequestResponse = new ApiResponse()
-        .description("客户端错误")
+        .description("请求参数错误")
         .content(new Content().addMediaType("application/json",
             new MediaType().schema(new Schema<>().$ref("#/components/schemas/BadRequestResponse"))));
 
