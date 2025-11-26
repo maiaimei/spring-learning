@@ -42,6 +42,7 @@ public class AdvancedOpenApiConfig {
     // Add success response schema
     Schema<?> successResponseSchema = new Schema<>()
         .type("object")
+        .description("Operation successful")
         .addProperty("code", new Schema<>().type("integer").example(200).description("Response code"))
         .addProperty("message", new Schema<>().type("string").example("Operation successful").description("Response message"))
         .addProperty("data", new Schema<>().description("Response data"))
@@ -131,33 +132,34 @@ public class AdvancedOpenApiConfig {
 
   private void wrapSuccessResponses(ApiResponses responses) {
     ApiResponse originalResponse = responses.get("200");
-    
+
     if (originalResponse != null && originalResponse.getContent() != null) {
       // Extract original response schema
       Content originalContent = originalResponse.getContent();
       MediaType originalMediaType = originalContent.get("application/json");
-      
+
       if (originalMediaType != null && originalMediaType.getSchema() != null) {
         // Create wrapped response with original data as 'data' property
         Schema<?> wrappedSchema = new Schema<>()
             .type("object")
+            .description("Operation successful")
             .addProperty("code", new Schema<>().type("integer").example(200).description("Response code"))
             .addProperty("message", new Schema<>().type("string").example("Operation successful").description("Response message"))
             .addProperty("data", originalMediaType.getSchema())
             .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("Response timestamp"));
-        
+
         // Replace original response with wrapped version
         ApiResponse wrappedResponse = new ApiResponse()
             .description(originalResponse.getDescription() != null ? originalResponse.getDescription() : "Operation successful")
             .content(new Content().addMediaType("application/json", new MediaType().schema(wrappedSchema)));
-        
+
         responses.addApiResponse("200", wrappedResponse);
       }
     } else {
       // No existing 200 response, add default wrapped response
       responses.addApiResponse("200", new ApiResponse()
           .description("Operation successful")
-          .content(new Content().addMediaType("application/json", 
+          .content(new Content().addMediaType("application/json",
               new MediaType().schema(new Schema<>().$ref("#/components/schemas/SuccessResponse")))));
     }
   }
