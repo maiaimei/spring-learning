@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AdvancedOpenApiConfig {
 
-  //@Bean
+  // @Bean
   public OpenApiCustomizer globalResponseCustomizer() {
     return openApi -> {
       Components components = openApi.getComponents();
@@ -57,14 +57,13 @@ public class AdvancedOpenApiConfig {
 
       // 为所有路径添加全局响应
       if (openApi.getPaths() != null) {
-        openApi.getPaths().values().forEach(pathItem ->
-            pathItem.readOperations().forEach(operation -> {
-              if (operation.getResponses() != null) {
-                operation.getResponses().addApiResponse("400", new ApiResponse().$ref("#/components/responses/BadRequest"));
-                operation.getResponses().addApiResponse("500", new ApiResponse().$ref("#/components/responses/ServerError"));
-              }
-            })
-        );
+        openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(operation -> {
+          if (operation.getResponses() != null) {
+            operation.getResponses().addApiResponse("400", new ApiResponse().$ref("#/components/responses/BadRequest"));
+            operation.getResponses().addApiResponse("500",
+                new ApiResponse().$ref("#/components/responses/ServerError"));
+          }
+        }));
       }
     };
   }
@@ -91,70 +90,62 @@ public class AdvancedOpenApiConfig {
   }
 
   private void addGlobalSchemas(Components components) {
-    // 成功响应Schema
-    Schema<?> successResultSchema = new Schema<>()
+    // 添加成功响应Schema
+    Schema<?> successResponseSchema = new Schema<>()
         .type("object")
         .addProperty("code", new Schema<>().type("integer").example(200).description("响应码"))
         .addProperty("message", new Schema<>().type("string").example("操作成功").description("响应消息"))
         .addProperty("data", new Schema<>().description("响应数据"))
         .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("响应时间"));
+    components.addSchemas("SuccessResponse", successResponseSchema);
 
-    // 错误响应Schema
-    Schema<?> errorResponseSchema = new Schema<>()
+    // 添加错误响应Schema
+    components.addSchemas("BadRequestResponse", newErrorResponseSchema(400, "请求参数错误"));
+    components.addSchemas("UnauthorizedResponse", newErrorResponseSchema(401, "未授权访问"));
+    components.addSchemas("ForbiddenResponse", newErrorResponseSchema(403, "禁止访问"));
+    components.addSchemas("NotFoundResponse", newErrorResponseSchema(404, "资源未找到"));
+    components.addSchemas("ServerErrorResponse", newErrorResponseSchema(500, "服务器内部错误"));
+  }
+
+  private Schema<?> newErrorResponseSchema(int httpStatusCode, String errorMessage) {
+    return new Schema<>()
         .type("object")
-        .addProperty("code", new Schema<>().type("integer").example(400).description("错误码"))
-        .addProperty("message", new Schema<>().type("string").example("请求参数错误").description("错误消息"))
-        .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("错误时间"))
-        .addProperty("path", new Schema<>().type("string").description("请求路径"));
-
-    // 分页响应Schema
-    Schema<?> pageResultSchema = new Schema<>()
-        .type("object")
-        .addProperty("code", new Schema<>().type("integer").example(200))
-        .addProperty("message", new Schema<>().type("string").example("查询成功"))
-        .addProperty("data", new Schema<>()
-            .type("object")
-            .addProperty("content", new Schema<>().type("array").items(new Schema<>()))
-            .addProperty("totalElements", new Schema<>().type("integer"))
-            .addProperty("totalPages", new Schema<>().type("integer"))
-            .addProperty("size", new Schema<>().type("integer"))
-            .addProperty("number", new Schema<>().type("integer")));
-
-    components.addSchemas("SuccessResult", successResultSchema);
-    components.addSchemas("ErrorResponse", errorResponseSchema);
-    components.addSchemas("PageResult", pageResultSchema);
+        .addProperty("code", new Schema<>().type("integer").example(httpStatusCode).description("错误码"))
+        .addProperty("message", new Schema<>().type("string").example(errorMessage).description("错误消息"))
+        .addProperty("path", new Schema<>().type("string").example("/api/example").description("请求路径"))
+        .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("错误时间"));
   }
 
   private void addGlobalResponses(Components components) {
     // 400 错误响应
     ApiResponse badRequestResponse = new ApiResponse()
-        .description("请求参数错误")
+        .description("客户端错误")
         .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/BadRequestResponse"))));
 
     // 401 未授权响应
     ApiResponse unauthorizedResponse = new ApiResponse()
         .description("未授权访问")
         .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/UnauthorizedResponse"))));
 
     // 403 禁止访问响应
     ApiResponse forbiddenResponse = new ApiResponse()
         .description("禁止访问")
         .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ForbiddenResponse"))));
 
     // 404 未找到响应
     ApiResponse notFoundResponse = new ApiResponse()
         .description("资源未找到")
         .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/NotFoundResponse"))));
 
     // 500 服务器错误响应
     ApiResponse serverErrorResponse = new ApiResponse()
         .description("服务器内部错误")
         .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ServerErrorResponse"))));
 
     components.addResponses("BadRequest", badRequestResponse);
     components.addResponses("Unauthorized", unauthorizedResponse);
@@ -165,9 +156,8 @@ public class AdvancedOpenApiConfig {
 
   private void addGlobalResponsesToOperations(OpenAPI openApi) {
     if (openApi.getPaths() != null) {
-      openApi.getPaths().values().forEach(pathItem ->
-          pathItem.readOperations().forEach(this::addGlobalResponsesToOperation)
-      );
+      openApi.getPaths().values()
+          .forEach(pathItem -> pathItem.readOperations().forEach(this::addGlobalResponsesToOperation));
     }
   }
 
@@ -179,14 +169,14 @@ public class AdvancedOpenApiConfig {
     }
 
     // 检查是否有自定义@ApiResponses注解
-    boolean hasCustomResponses = responses.size() > 0;
+    boolean hasCustomResponses = !responses.isEmpty();
 
     // 如果没有自定义响应，添加统一响应包装
     if (!hasCustomResponses) {
       responses.addApiResponse("200", new ApiResponse()
           .description("操作成功")
           .content(new Content().addMediaType("application/json",
-              new MediaType().schema(new Schema<>().$ref("#/components/schemas/SuccessResult")))));
+              new MediaType().schema(new Schema<>().$ref("#/components/schemas/SuccessResponse")))));
     }
 
     // 添加全局错误响应
