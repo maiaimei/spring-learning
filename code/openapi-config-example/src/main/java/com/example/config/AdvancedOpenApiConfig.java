@@ -44,7 +44,8 @@ public class AdvancedOpenApiConfig {
         .type("object")
         .description("Operation successful")
         .addProperty("code", new Schema<>().type("integer").example(200).description("Response code"))
-        .addProperty("message", new Schema<>().type("string").example("Operation successful").description("Response message"))
+        .addProperty("message",
+            new Schema<>().type("string").example("Operation successful").description("Response message"))
         .addProperty("data", new Schema<>().description("Response data"))
         .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("Response timestamp"));
     components.addSchemas("SuccessResponse", successResponseSchema);
@@ -54,7 +55,8 @@ public class AdvancedOpenApiConfig {
     components.addSchemas("UnauthorizedResponse", newErrorResponseSchema(401, "Unauthorized", "Unauthorized access"));
     components.addSchemas("ForbiddenResponse", newErrorResponseSchema(403, "Forbidden", "Access forbidden"));
     components.addSchemas("NotFoundResponse", newErrorResponseSchema(404, "Not found", "Resource not found"));
-    components.addSchemas("ServerErrorResponse", newErrorResponseSchema(500, "Internal server error", "Internal server error"));
+    components.addSchemas("ServerErrorResponse",
+        newErrorResponseSchema(500, "Internal server error", "Internal server error"));
   }
 
   private Schema<?> newBadRequestResponseSchema() {
@@ -81,27 +83,32 @@ public class AdvancedOpenApiConfig {
     // 400 Bad Request response
     ApiResponse badRequestResponse = new ApiResponse()
         .description("Bad request")
-        .content(new Content().addMediaType("application/json", new MediaType().schema(new Schema<>().$ref("#/components/schemas/BadRequestResponse"))));
+        .content(new Content().addMediaType("application/json",
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/BadRequestResponse"))));
 
     // 401 Unauthorized response
     ApiResponse unauthorizedResponse = new ApiResponse()
         .description("Unauthorized")
-        .content(new Content().addMediaType("application/json", new MediaType().schema(new Schema<>().$ref("#/components/schemas/UnauthorizedResponse"))));
+        .content(new Content().addMediaType("application/json",
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/UnauthorizedResponse"))));
 
     // 403 Forbidden response
     ApiResponse forbiddenResponse = new ApiResponse()
         .description("Forbidden")
-        .content(new Content().addMediaType("application/json", new MediaType().schema(new Schema<>().$ref("#/components/schemas/ForbiddenResponse"))));
+        .content(new Content().addMediaType("application/json",
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ForbiddenResponse"))));
 
     // 404 Not Found response
     ApiResponse notFoundResponse = new ApiResponse()
         .description("Not found")
-        .content(new Content().addMediaType("application/json", new MediaType().schema(new Schema<>().$ref("#/components/schemas/NotFoundResponse"))));
+        .content(new Content().addMediaType("application/json",
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/NotFoundResponse"))));
 
     // 500 Internal Server Error response
     ApiResponse serverErrorResponse = new ApiResponse()
         .description("Internal server error")
-        .content(new Content().addMediaType("application/json", new MediaType().schema(new Schema<>().$ref("#/components/schemas/ServerErrorResponse"))));
+        .content(new Content().addMediaType("application/json",
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ServerErrorResponse"))));
 
     components.addResponses("BadRequest", badRequestResponse);
     components.addResponses("Unauthorized", unauthorizedResponse);
@@ -112,7 +119,8 @@ public class AdvancedOpenApiConfig {
 
   private void addGlobalResponsesToOperations(OpenAPI openApi) {
     if (openApi.getPaths() != null) {
-      openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(this::addGlobalResponsesToOperation));
+      openApi.getPaths().values()
+          .forEach(pathItem -> pathItem.readOperations().forEach(this::addGlobalResponsesToOperation));
     }
   }
 
@@ -123,11 +131,21 @@ public class AdvancedOpenApiConfig {
       operation.setResponses(responses);
     }
 
+    // Check if operation has SkipWrapResponse annotation
+    boolean skipWrap = hasSkipWrapResponseAnnotation(operation);
+
     // Wrap existing 200 responses with unified response structure
-    wrapSuccessResponses(responses);
+    if (!skipWrap) {
+      wrapSuccessResponses(responses);
+    }
 
     // Add global error responses
     addErrorResponses(responses);
+  }
+
+  private boolean hasSkipWrapResponseAnnotation(Operation operation) {
+    return operation.getExtensions() != null &&
+        operation.getExtensions().containsKey("x-skip-wrap-response");
   }
 
   private void wrapSuccessResponses(ApiResponses responses) {
@@ -144,13 +162,16 @@ public class AdvancedOpenApiConfig {
             .type("object")
             .description("Operation successful")
             .addProperty("code", new Schema<>().type("integer").example(200).description("Response code"))
-            .addProperty("message", new Schema<>().type("string").example("Operation successful").description("Response message"))
+            .addProperty("message",
+                new Schema<>().type("string").example("Operation successful").description("Response message"))
             .addProperty("data", originalMediaType.getSchema())
-            .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("Response timestamp"));
+            .addProperty("timestamp",
+                new Schema<>().type("string").format("date-time").description("Response timestamp"));
 
         // Replace original response with wrapped version
         ApiResponse wrappedResponse = new ApiResponse()
-            .description(originalResponse.getDescription() != null ? originalResponse.getDescription() : "Operation successful")
+            .description(
+                originalResponse.getDescription() != null ? originalResponse.getDescription() : "Operation successful")
             .content(new Content().addMediaType("application/json", new MediaType().schema(wrappedSchema)));
 
         responses.addApiResponse("200", wrappedResponse);

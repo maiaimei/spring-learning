@@ -1,16 +1,16 @@
 package com.example.controller;
 
+import com.example.annotation.SkipWrapResponse;
 import com.example.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/users")
@@ -19,6 +19,13 @@ public class UserController {
 
   private final ConcurrentHashMap<BigDecimal, User> users = new ConcurrentHashMap<>();
   private final AtomicLong idGenerator = new AtomicLong(1);
+
+  @GetMapping("/raw")
+  @SkipWrapResponse
+  @Operation(summary = "Get raw response", description = "Returns unwrapped response")
+  public User getRawUser() {
+    return new User();
+  }
 
   @GetMapping
   @Operation(summary = "Get all users", description = "Retrieve all users")
