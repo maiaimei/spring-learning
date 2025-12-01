@@ -44,7 +44,7 @@ public class AdvancedOpenApiConfig {
     components.addSchemas("UnauthorizedResponse", createErrorResponseSchema(HttpStatus.UNAUTHORIZED));
     components.addSchemas("ForbiddenResponse", createErrorResponseSchema(HttpStatus.FORBIDDEN));
     components.addSchemas("NotFoundResponse", createErrorResponseSchema(HttpStatus.NOT_FOUND));
-    components.addSchemas("ServerErrorResponse", createErrorResponseSchema(HttpStatus.INTERNAL_SERVER_ERROR));
+    components.addSchemas("InternalServerErrorResponse", createErrorResponseSchema(HttpStatus.INTERNAL_SERVER_ERROR));
   }
 
   private Schema<?> createSuccessResponseSchema(Schema<?> dataSchema) {
@@ -86,7 +86,7 @@ public class AdvancedOpenApiConfig {
     components.addResponses("Unauthorized", createErrorResponse(components, "UnauthorizedResponse", HttpStatus.UNAUTHORIZED));
     components.addResponses("Forbidden", createErrorResponse(components, "ForbiddenResponse", HttpStatus.FORBIDDEN));
     components.addResponses("NotFound", createErrorResponse(components, "NotFoundResponse", HttpStatus.NOT_FOUND));
-    components.addResponses("ServerError", createErrorResponse(components, "ServerErrorResponse", HttpStatus.INTERNAL_SERVER_ERROR));
+    components.addResponses("InternalServerError", createErrorResponse(components, "InternalServerErrorResponse", HttpStatus.INTERNAL_SERVER_ERROR));
   }
 
   private ApiResponse createErrorResponse(Components components, String schemaName, HttpStatus httpStatus) {
@@ -181,7 +181,7 @@ public class AdvancedOpenApiConfig {
       responses.addApiResponse("404", new ApiResponse().$ref("#/components/responses/NotFound"));
     }
     if (!responses.containsKey("500")) {
-      responses.addApiResponse("500", new ApiResponse().$ref("#/components/responses/ServerError"));
+      responses.addApiResponse("500", new ApiResponse().$ref("#/components/responses/InternalServerError"));
     }
   }
 }
