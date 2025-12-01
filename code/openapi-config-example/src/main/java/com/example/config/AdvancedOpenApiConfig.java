@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Configuration
 public class AdvancedOpenApiConfig {
@@ -72,9 +73,9 @@ public class AdvancedOpenApiConfig {
         .addProperty("code", new IntegerSchema().description("Error code").example(httpStatus.value()))
         .addProperty("message", new StringSchema().description("Error message").example(httpStatus.getReasonPhrase()))
         .addProperty("errors", new ArraySchema().items(new ObjectSchema()
-            .addProperty("field", new StringSchema().description("Error field"))
-            .addProperty("message", new StringSchema().description("Field error message"))
-            .addProperty("rejectedValue", new ObjectSchema().description("Rejected value")))
+                .addProperty("field", new StringSchema().description("Error field"))
+                .addProperty("message", new StringSchema().description("Field error message"))
+                .addProperty("rejectedValue", new ObjectSchema().description("Rejected value")))
             .description("Detailed error information list"))
         .addProperty("path", new StringSchema().description("Request path").example("/path/to"))
         .addProperty("timestamp",
@@ -182,6 +183,10 @@ public class AdvancedOpenApiConfig {
 
     if (schema.getExample() != null) {
       return schema.getExample();
+    }
+
+    if (StringUtils.hasText(schema.get$ref())) {
+
     }
 
     String type = schema.getType();
