@@ -140,20 +140,12 @@ public class AdvancedOpenApiConfig {
 
       if (originalMediaType != null && originalMediaType.getSchema() != null) {
         // Create wrapped response with original data as 'data' property
-        Schema<?> wrappedSchema = new Schema<>()
-            .type("object")
-            .description("Operation successful")
-            .addProperty("code", new Schema<>().type("integer").example(200).description("Response code"))
-            .addProperty("message",
-                new Schema<>().type("string").example("Operation successful").description("Response message"))
-            .addProperty("data", originalMediaType.getSchema())
-            .addProperty("timestamp",
-                new Schema<>().type("string").format("date-time").description("Response timestamp"));
+        final Schema<?> originalSchema = originalMediaType.getSchema();
+        Schema<?> wrappedSchema = createSuccessResponseSchema(originalSchema);
 
         // Replace original response with wrapped version
         ApiResponse wrappedResponse = new ApiResponse()
-            .description(
-                originalResponse.getDescription() != null ? originalResponse.getDescription() : "Operation successful")
+            .description(Objects.toString(originalResponse.getDescription(), HttpStatus.OK.getReasonPhrase()))
             .content(new Content().addMediaType("application/json", new MediaType().schema(wrappedSchema)));
 
         responses.addApiResponse("200", wrappedResponse);
@@ -161,9 +153,8 @@ public class AdvancedOpenApiConfig {
     } else {
       // No existing 200 response, add default wrapped response
       responses.addApiResponse("200", new ApiResponse()
-          .description("Operation successful")
-          .content(new Content().addMediaType("application/json",
-              new MediaType().schema(new Schema<>().$ref("#/components/schemas/SuccessResponse")))));
+          .description(HttpStatus.OK.getReasonPhrase())
+          .content(new Content().addMediaType("application/json", new MediaType().schema(createSuccessResponseSchema(null)))));
     }
   }
 
