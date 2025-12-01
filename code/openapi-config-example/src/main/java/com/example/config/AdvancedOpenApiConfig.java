@@ -6,9 +6,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,10 +49,10 @@ public class AdvancedOpenApiConfig {
     HttpStatus httpStatus = HttpStatus.OK;
     return new ObjectSchema()
         .description(httpStatus.getReasonPhrase())
-        .addProperty("code", new IntegerSchema().description("Response code").example(httpStatus.value()))
-        .addProperty("message", new StringSchema().description("Response message").example(httpStatus.getReasonPhrase()))
+        .addProperty("code", new IntegerSchema().description("Response code"))
+        .addProperty("message", new StringSchema().description("Response message"))
         .addProperty("data", dataSchema)
-        .addProperty("timestamp", new DateTimeSchema().description("Response timestamp").example("2025-12-01T14:44:22.892Z"));
+        .addProperty("timestamp", new StringSchema().format("date-time").description("Response timestamp"));
   }
 
   private Schema<?> createErrorResponseSchema(HttpStatus httpStatus) {
@@ -63,7 +61,8 @@ public class AdvancedOpenApiConfig {
         .addProperty("code", new IntegerSchema().description("Error code").example(httpStatus.value()))
         .addProperty("message", new StringSchema().description("Error message").example(httpStatus.getReasonPhrase()))
         .addProperty("path", new StringSchema().description("Request path").example("/path/to"))
-        .addProperty("timestamp", new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"));
+        .addProperty("timestamp",
+            new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"));
   }
 
   private Schema<?> createBadRequestResponseSchema() {
@@ -73,20 +72,24 @@ public class AdvancedOpenApiConfig {
         .addProperty("code", new IntegerSchema().description("Error code").example(httpStatus.value()))
         .addProperty("message", new StringSchema().description("Error message").example(httpStatus.getReasonPhrase()))
         .addProperty("errors", new ArraySchema().items(new ObjectSchema()
-                .addProperty("field", new StringSchema().description("Error field"))
-                .addProperty("message", new StringSchema().description("Field error message"))
-                .addProperty("rejectedValue", new ObjectSchema().description("Rejected value")))
+            .addProperty("field", new StringSchema().description("Error field"))
+            .addProperty("message", new StringSchema().description("Field error message"))
+            .addProperty("rejectedValue", new ObjectSchema().description("Rejected value")))
             .description("Detailed error information list"))
         .addProperty("path", new StringSchema().description("Request path").example("/path/to"))
-        .addProperty("timestamp", new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"));
+        .addProperty("timestamp",
+            new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"));
   }
 
   private void addGlobalResponses(Components components) {
-    components.addResponses("BadRequest", createErrorResponse(components, "BadRequestResponse", HttpStatus.BAD_REQUEST));
-    components.addResponses("Unauthorized", createErrorResponse(components, "UnauthorizedResponse", HttpStatus.UNAUTHORIZED));
+    components.addResponses("BadRequest",
+        createErrorResponse(components, "BadRequestResponse", HttpStatus.BAD_REQUEST));
+    components.addResponses("Unauthorized",
+        createErrorResponse(components, "UnauthorizedResponse", HttpStatus.UNAUTHORIZED));
     components.addResponses("Forbidden", createErrorResponse(components, "ForbiddenResponse", HttpStatus.FORBIDDEN));
     components.addResponses("NotFound", createErrorResponse(components, "NotFoundResponse", HttpStatus.NOT_FOUND));
-    components.addResponses("InternalServerError", createErrorResponse(components, "InternalServerErrorResponse", HttpStatus.INTERNAL_SERVER_ERROR));
+    components.addResponses("InternalServerError",
+        createErrorResponse(components, "InternalServerErrorResponse", HttpStatus.INTERNAL_SERVER_ERROR));
   }
 
   private ApiResponse createErrorResponse(Components components, String schemaName, HttpStatus httpStatus) {
@@ -98,12 +101,14 @@ public class AdvancedOpenApiConfig {
     final Schema<?> schema = components.getSchemas().get(schemaName);
     return new ApiResponse()
         .description(schema.getDescription())
-        .content(new Content().addMediaType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE, new MediaType().schema(schema).example(example)));
+        .content(new Content().addMediaType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
+            new MediaType().schema(schema).example(example)));
   }
 
   private void addGlobalResponsesToOperations(OpenAPI openApi) {
     if (!CollectionUtils.isEmpty(openApi.getPaths())) {
-      openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(this::addGlobalResponsesToOperation));
+      openApi.getPaths().values()
+          .forEach(pathItem -> pathItem.readOperations().forEach(this::addGlobalResponsesToOperation));
     }
   }
 
@@ -142,11 +147,13 @@ public class AdvancedOpenApiConfig {
         // Create wrapped response with original data as 'data' property
         final Schema<?> originalSchema = originalMediaType.getSchema();
         Schema<?> wrappedSchema = createSuccessResponseSchema(originalSchema);
+        Map<String, Object> wrappedExample = buildWrappedExample(originalSchema);
 
         // Replace original response with wrapped version
         ApiResponse wrappedResponse = new ApiResponse()
             .description(Objects.toString(originalResponse.getDescription(), HttpStatus.OK.getReasonPhrase()))
-            .content(new Content().addMediaType("application/json", new MediaType().schema(wrappedSchema)));
+            .content(new Content().addMediaType("application/json",
+                new MediaType().schema(wrappedSchema).example(wrappedExample)));
 
         responses.addApiResponse("200", wrappedResponse);
       }
@@ -154,8 +161,51 @@ public class AdvancedOpenApiConfig {
       // No existing 200 response, add default wrapped response
       responses.addApiResponse("200", new ApiResponse()
           .description(HttpStatus.OK.getReasonPhrase())
-          .content(new Content().addMediaType("application/json", new MediaType().schema(createSuccessResponseSchema(null)))));
+          .content(new Content().addMediaType("application/json",
+              new MediaType().schema(createSuccessResponseSchema(null)))));
     }
+  }
+
+  private Map<String, Object> buildWrappedExample(Schema<?> originalSchema) {
+    Map<String, Object> wrappedExample = new LinkedHashMap<>();
+    wrappedExample.put("code", 200);
+    wrappedExample.put("message", "Operation successful");
+    wrappedExample.put("data", buildExampleFromSchema(originalSchema));
+    wrappedExample.put("timestamp", "2025-12-01T14:44:22.892Z");
+    return wrappedExample;
+  }
+
+  private Object buildExampleFromSchema(Schema<?> schema) {
+    if (schema == null) {
+      return null;
+    }
+
+    if (schema.getExample() != null) {
+      return schema.getExample();
+    }
+
+    String type = schema.getType();
+    if ("array".equals(type)) {
+      return List.of(buildExampleFromSchema(schema.getItems()));
+    }
+
+    if ("object".equals(type) && schema.getProperties() != null) {
+      Map<String, Object> example = new LinkedHashMap<>();
+      schema.getProperties().forEach((key, propertySchema) -> example.put(key, buildExampleFromSchema(propertySchema)));
+      return example;
+    }
+
+    return getDefaultValueByType(type);
+  }
+
+  private Object getDefaultValueByType(String type) {
+    return switch (type) {
+      case "string" -> "string";
+      case "integer" -> 0;
+      case "number" -> 0.0;
+      case "boolean" -> false;
+      default -> null;
+    };
   }
 
   private void addErrorResponses(ApiResponses responses) {
