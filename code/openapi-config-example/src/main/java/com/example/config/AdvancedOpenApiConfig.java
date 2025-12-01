@@ -49,42 +49,25 @@ public class AdvancedOpenApiConfig {
 
   private Schema<?> createSuccessResponseSchema(Schema<?> dataSchema) {
     HttpStatus httpStatus = HttpStatus.OK;
-    Map<String, Object> example = new LinkedHashMap<>();
-    example.put("code", httpStatus.value());
-    example.put("message", httpStatus.getReasonPhrase());
-    example.put("data", null);
-    example.put("timestamp", "2025-12-01T14:44:22.892Z");
     return new ObjectSchema()
         .description(httpStatus.getReasonPhrase())
         .addProperty("code", new IntegerSchema().description("Response code").example(httpStatus.value()))
         .addProperty("message", new StringSchema().description("Response message").example(httpStatus.getReasonPhrase()))
         .addProperty("data", dataSchema)
-        .addProperty("timestamp", new DateTimeSchema().description("Response timestamp").example("2025-12-01T14:44:22.892Z"))
-        .example(example);
+        .addProperty("timestamp", new DateTimeSchema().description("Response timestamp").example("2025-12-01T14:44:22.892Z"));
   }
 
   private Schema<?> createErrorResponseSchema(HttpStatus httpStatus) {
-    Map<String, Object> example = new LinkedHashMap<>();
-    example.put("code", httpStatus.value());
-    example.put("message", httpStatus.getReasonPhrase());
-    example.put("path", "/path/to");
-    example.put("timestamp", "2025-12-01T14:44:22.892Z");
     return new ObjectSchema()
         .description(httpStatus.getReasonPhrase())
         .addProperty("code", new IntegerSchema().description("Error code").example(httpStatus.value()))
         .addProperty("message", new StringSchema().description("Error message").example(httpStatus.getReasonPhrase()))
         .addProperty("path", new StringSchema().description("Request path").example("/path/to"))
-        .addProperty("timestamp", new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"))
-        .example(example);
+        .addProperty("timestamp", new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"));
   }
 
   private Schema<?> createBadRequestResponseSchema() {
     HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
-    Map<String, Object> example = new LinkedHashMap<>();
-    example.put("code", httpStatus.value());
-    example.put("message", httpStatus.getReasonPhrase());
-    example.put("path", "/path/to");
-    example.put("timestamp", "2025-12-01T14:44:22.892Z");
     return new ObjectSchema()
         .description(httpStatus.getReasonPhrase())
         .addProperty("code", new IntegerSchema().description("Error code").example(httpStatus.value()))
@@ -95,23 +78,27 @@ public class AdvancedOpenApiConfig {
                 .addProperty("rejectedValue", new ObjectSchema().description("Rejected value")))
             .description("Detailed error information list"))
         .addProperty("path", new StringSchema().description("Request path").example("/path/to"))
-        .addProperty("timestamp", new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"))
-        .example(example);
+        .addProperty("timestamp", new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"));
   }
 
   private void addGlobalResponses(Components components) {
-    components.addResponses("BadRequest", createApiResponse(components, "BadRequestResponse"));
-    components.addResponses("Unauthorized", createApiResponse(components, "UnauthorizedResponse"));
-    components.addResponses("Forbidden", createApiResponse(components, "ForbiddenResponse"));
-    components.addResponses("NotFound", createApiResponse(components, "NotFoundResponse"));
-    components.addResponses("ServerError", createApiResponse(components, "ServerErrorResponse"));
+    components.addResponses("BadRequest", createErrorResponse(components, "BadRequestResponse", HttpStatus.BAD_REQUEST));
+    components.addResponses("Unauthorized", createErrorResponse(components, "UnauthorizedResponse", HttpStatus.UNAUTHORIZED));
+    components.addResponses("Forbidden", createErrorResponse(components, "ForbiddenResponse", HttpStatus.FORBIDDEN));
+    components.addResponses("NotFound", createErrorResponse(components, "NotFoundResponse", HttpStatus.NOT_FOUND));
+    components.addResponses("ServerError", createErrorResponse(components, "ServerErrorResponse", HttpStatus.INTERNAL_SERVER_ERROR));
   }
 
-  private ApiResponse createApiResponse(Components components, String schemaName) {
+  private ApiResponse createErrorResponse(Components components, String schemaName, HttpStatus httpStatus) {
+    Map<String, Object> example = new LinkedHashMap<>();
+    example.put("code", httpStatus.value());
+    example.put("message", httpStatus.getReasonPhrase());
+    example.put("path", "/path/to");
+    example.put("timestamp", "2025-12-01T14:44:22.892Z");
     final Schema<?> schema = components.getSchemas().get(schemaName);
     return new ApiResponse()
         .description(schema.getDescription())
-        .content(new Content().addMediaType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE, new MediaType().schema(schema).example(schema.getExample())));
+        .content(new Content().addMediaType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE, new MediaType().schema(schema).example(example)));
   }
 
   private void addGlobalResponsesToOperations(OpenAPI openApi) {
