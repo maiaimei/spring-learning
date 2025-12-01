@@ -3,16 +3,16 @@ package com.example.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 
 @Configuration
 public class AdvancedOpenApiConfig {
@@ -39,82 +39,82 @@ public class AdvancedOpenApiConfig {
   }
 
   private void addGlobalSchemas(Components components) {
-    // Add success response schema
-    Schema<?> successResponseSchema = new Schema<>()
-        .type("object")
-        .description("Operation successful")
-        .addProperty("code", new Schema<>().type("integer").example(200).description("Response code"))
-        .addProperty("message",
-            new Schema<>().type("string").example("Operation successful").description("Response message"))
-        .addProperty("data", new Schema<>().description("Response data"))
-        .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("Response timestamp"));
-    components.addSchemas("SuccessResponse", successResponseSchema);
-
-    // Add error response schemas
-    components.addSchemas("BadRequestResponse", newBadRequestResponseSchema());
-    components.addSchemas("UnauthorizedResponse", newErrorResponseSchema(401, "Unauthorized", "Unauthorized access"));
-    components.addSchemas("ForbiddenResponse", newErrorResponseSchema(403, "Forbidden", "Access forbidden"));
-    components.addSchemas("NotFoundResponse", newErrorResponseSchema(404, "Not found", "Resource not found"));
-    components.addSchemas("ServerErrorResponse",
-        newErrorResponseSchema(500, "Internal server error", "Internal server error"));
+    components.addSchemas("BadRequestResponse", createBadRequestResponseSchema());
+    components.addSchemas("UnauthorizedResponse", createErrorResponseSchema(HttpStatus.UNAUTHORIZED));
+    components.addSchemas("ForbiddenResponse", createErrorResponseSchema(HttpStatus.FORBIDDEN));
+    components.addSchemas("NotFoundResponse", createErrorResponseSchema(HttpStatus.NOT_FOUND));
+    components.addSchemas("ServerErrorResponse", createErrorResponseSchema(HttpStatus.INTERNAL_SERVER_ERROR));
   }
 
-  private Schema<?> newBadRequestResponseSchema() {
-    final Schema<?> schema = newErrorResponseSchema(400, "Bad request", "Bad request");
-    return schema.addProperty("errors", new Schema<>().type("array")
-        .items(new Schema<>().type("object")
-            .addProperty("field", new Schema<>().type("string").description("Error field"))
-            .addProperty("message", new Schema<>().type("string").description("Field error message"))
-            .addProperty("rejectedValue", new Schema<>().description("Rejected value")))
-        .description("Detailed error information list"));
+  private Schema<?> createSuccessResponseSchema(Schema<?> dataSchema) {
+    HttpStatus httpStatus = HttpStatus.OK;
+    Map<String, Object> example = new LinkedHashMap<>();
+    example.put("code", httpStatus.value());
+    example.put("message", httpStatus.getReasonPhrase());
+    example.put("data", null);
+    example.put("timestamp", "2025-12-01T14:44:22.892Z");
+    return new ObjectSchema()
+        .description(httpStatus.getReasonPhrase())
+        .addProperty("code", new IntegerSchema().description("Response code").example(httpStatus.value()))
+        .addProperty("message", new StringSchema().description("Response message").example(httpStatus.getReasonPhrase()))
+        .addProperty("data", dataSchema)
+        .addProperty("timestamp", new DateTimeSchema().description("Response timestamp").example("2025-12-01T14:44:22.892Z"))
+        .example(example);
   }
 
-  private Schema<?> newErrorResponseSchema(int code, String description, String message) {
-    return new Schema<>()
-        .type("object")
-        .description(description)
-        .addProperty("code", new Schema<>().type("integer").example(code).description("Error code"))
-        .addProperty("message", new Schema<>().type("string").example(message).description("Error message"))
-        .addProperty("path", new Schema<>().type("string").example("/api/example").description("Request path"))
-        .addProperty("timestamp", new Schema<>().type("string").format("date-time").description("Error timestamp"));
+  private Schema<?> createErrorResponseSchema(HttpStatus httpStatus) {
+    Map<String, Object> example = new LinkedHashMap<>();
+    example.put("code", httpStatus.value());
+    example.put("message", httpStatus.getReasonPhrase());
+    example.put("path", "/path/to");
+    example.put("timestamp", "2025-12-01T14:44:22.892Z");
+    return new ObjectSchema()
+        .description(httpStatus.getReasonPhrase())
+        .addProperty("code", new IntegerSchema().description("Error code").example(httpStatus.value()))
+        .addProperty("message", new StringSchema().description("Error message").example(httpStatus.getReasonPhrase()))
+        .addProperty("path", new StringSchema().description("Request path").example("/path/to"))
+        .addProperty("timestamp", new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"))
+        .example(example);
+  }
+
+  private Schema<?> createBadRequestResponseSchema() {
+    HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+    Map<String, Object> example = new LinkedHashMap<>();
+    example.put("code", httpStatus.value());
+    example.put("message", httpStatus.getReasonPhrase());
+    example.put("path", "/path/to");
+    example.put("timestamp", "2025-12-01T14:44:22.892Z");
+    return new ObjectSchema()
+        .description(httpStatus.getReasonPhrase())
+        .addProperty("code", new IntegerSchema().description("Error code").example(httpStatus.value()))
+        .addProperty("message", new StringSchema().description("Error message").example(httpStatus.getReasonPhrase()))
+        .addProperty("errors", new ArraySchema().items(new ObjectSchema()
+                .addProperty("field", new StringSchema().description("Error field"))
+                .addProperty("message", new StringSchema().description("Field error message"))
+                .addProperty("rejectedValue", new ObjectSchema().description("Rejected value")))
+            .description("Detailed error information list"))
+        .addProperty("path", new StringSchema().description("Request path").example("/path/to"))
+        .addProperty("timestamp", new DateTimeSchema().description("Error timestamp").example("2025-12-01T14:44:22.892Z"))
+        .example(example);
   }
 
   private void addGlobalResponses(Components components) {
-    // 400 Bad Request response
-    ApiResponse badRequestResponse = new ApiResponse()
-        .description("Bad request")
-        .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/BadRequestResponse"))));
+    components.addResponses("BadRequest", createApiResponse("Bad request", "BadRequestResponse"));
+    components.addResponses("Unauthorized", createApiResponse("Unauthorized", "UnauthorizedResponse"));
+    components.addResponses("Forbidden", createApiResponse("Forbidden", "ForbiddenResponse"));
+    components.addResponses("NotFound", createApiResponse("Not found", "NotFoundResponse"));
+    components.addResponses("ServerError", createApiResponse("Internal server error", "ServerErrorResponse"));
+  }
 
-    // 401 Unauthorized response
-    ApiResponse unauthorizedResponse = new ApiResponse()
-        .description("Unauthorized")
-        .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/UnauthorizedResponse"))));
+  private Schema<?> createSchemaRef(String schemaName) {
+    return new Schema<>().$ref("#/components/schemas/" + schemaName);
+  }
 
-    // 403 Forbidden response
-    ApiResponse forbiddenResponse = new ApiResponse()
-        .description("Forbidden")
+  private ApiResponse createApiResponse(String description, String schemaName) {
+    return new ApiResponse()
+        .description(description)
         .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ForbiddenResponse"))));
-
-    // 404 Not Found response
-    ApiResponse notFoundResponse = new ApiResponse()
-        .description("Not found")
-        .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/NotFoundResponse"))));
-
-    // 500 Internal Server Error response
-    ApiResponse serverErrorResponse = new ApiResponse()
-        .description("Internal server error")
-        .content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ServerErrorResponse"))));
-
-    components.addResponses("BadRequest", badRequestResponse);
-    components.addResponses("Unauthorized", unauthorizedResponse);
-    components.addResponses("Forbidden", forbiddenResponse);
-    components.addResponses("NotFound", notFoundResponse);
-    components.addResponses("ServerError", serverErrorResponse);
+            new MediaType().schema(createSchemaRef(schemaName))));
   }
 
   private void addGlobalResponsesToOperations(OpenAPI openApi) {
