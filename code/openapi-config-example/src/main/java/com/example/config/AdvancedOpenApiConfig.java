@@ -13,6 +13,7 @@ import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.CollectionUtils;
 
 @Configuration
 public class AdvancedOpenApiConfig {
@@ -99,34 +100,29 @@ public class AdvancedOpenApiConfig {
   }
 
   private void addGlobalResponses(Components components) {
-    components.addResponses("BadRequest", createApiResponse("Bad request", "BadRequestResponse"));
-    components.addResponses("Unauthorized", createApiResponse("Unauthorized", "UnauthorizedResponse"));
-    components.addResponses("Forbidden", createApiResponse("Forbidden", "ForbiddenResponse"));
-    components.addResponses("NotFound", createApiResponse("Not found", "NotFoundResponse"));
-    components.addResponses("ServerError", createApiResponse("Internal server error", "ServerErrorResponse"));
+    components.addResponses("BadRequest", createApiResponse(components, "BadRequestResponse"));
+    components.addResponses("Unauthorized", createApiResponse(components, "UnauthorizedResponse"));
+    components.addResponses("Forbidden", createApiResponse(components, "ForbiddenResponse"));
+    components.addResponses("NotFound", createApiResponse(components, "NotFoundResponse"));
+    components.addResponses("ServerError", createApiResponse(components, "ServerErrorResponse"));
   }
 
-  private Schema<?> createSchemaRef(String schemaName) {
-    return new Schema<>().$ref("#/components/schemas/" + schemaName);
-  }
-
-  private ApiResponse createApiResponse(String description, String schemaName) {
+  private ApiResponse createApiResponse(Components components, String schemaName) {
+    final Schema<?> schema = components.getSchemas().get(schemaName);
     return new ApiResponse()
-        .description(description)
-        .content(new Content().addMediaType("application/json",
-            new MediaType().schema(createSchemaRef(schemaName))));
+        .description(schema.getDescription())
+        .content(new Content().addMediaType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE, new MediaType().schema(schema).example(schema.getExample())));
   }
 
   private void addGlobalResponsesToOperations(OpenAPI openApi) {
-    if (openApi.getPaths() != null) {
-      openApi.getPaths().values()
-          .forEach(pathItem -> pathItem.readOperations().forEach(this::addGlobalResponsesToOperation));
+    if (!CollectionUtils.isEmpty(openApi.getPaths())) {
+      openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(this::addGlobalResponsesToOperation));
     }
   }
 
   private void addGlobalResponsesToOperation(Operation operation) {
     ApiResponses responses = operation.getResponses();
-    if (responses == null) {
+    if (Objects.isNull(responses)) {
       responses = new ApiResponses();
       operation.setResponses(responses);
     }
@@ -144,8 +140,7 @@ public class AdvancedOpenApiConfig {
   }
 
   private boolean hasSkipWrapResponseAnnotation(Operation operation) {
-    return operation.getExtensions() != null &&
-        operation.getExtensions().containsKey("x-skip-wrap-response");
+    return Objects.nonNull(operation.getExtensions()) && operation.getExtensions().containsKey("x-skip-wrap-response");
   }
 
   private void wrapSuccessResponses(ApiResponses responses) {
@@ -186,20 +181,19 @@ public class AdvancedOpenApiConfig {
   }
 
   private void addErrorResponses(ApiResponses responses) {
-    Map<String, ApiResponse> responseMap = responses;
-    if (!responseMap.containsKey("400")) {
+    if (!responses.containsKey("400")) {
       responses.addApiResponse("400", new ApiResponse().$ref("#/components/responses/BadRequest"));
     }
-    if (!responseMap.containsKey("401")) {
+    if (!responses.containsKey("401")) {
       responses.addApiResponse("401", new ApiResponse().$ref("#/components/responses/Unauthorized"));
     }
-    if (!responseMap.containsKey("403")) {
+    if (!responses.containsKey("403")) {
       responses.addApiResponse("403", new ApiResponse().$ref("#/components/responses/Forbidden"));
     }
-    if (!responseMap.containsKey("404")) {
+    if (!responses.containsKey("404")) {
       responses.addApiResponse("404", new ApiResponse().$ref("#/components/responses/NotFound"));
     }
-    if (!responseMap.containsKey("500")) {
+    if (!responses.containsKey("500")) {
       responses.addApiResponse("500", new ApiResponse().$ref("#/components/responses/ServerError"));
     }
   }
