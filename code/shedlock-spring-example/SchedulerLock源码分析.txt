@@ -1,0 +1,175 @@
+/**
+ * @SchedulerLock 注解源码分析
+ * 
+ * 依赖关系：
+ * shedlock-spring (6.3.1)
+ *   └── shedlock-core (6.3.1)
+ * shedlock-provider-jdbc-template (6.3.1)
+ * 
+ * ============================================
+ * 1. @SchedulerLock 注解定义
+ * ============================================
+ * 
+ * 包路径：net.javacrumbs.shedlock.spring.annotation.SchedulerLock
+ * 
+ * @Target({ElementType.METHOD})
+ * @Retention(RetentionPolicy.RUNTIME)
+ * @Documented
+ * public @interface SchedulerLock {
+ *     // 锁的唯一名称，对应数据库表的 name 字段
+ *     String name();
+ *     
+ *     // 最小锁定时间，ISO-8601 duration 格式（如 PT2M = 2分钟）
+ *     // 即使任务执行完成，锁也会保持到这个时间，防止任务执行过快导致重复执行
+ *     String lockAtLeastFor() default "";
+ *     
+ *     // 最大锁定时间，ISO-8601 duration 格式（如 PT4M = 4分钟）
+ *     // 防止节点崩溃导致锁永久持有，超过此时间锁会自动释放
+ *     String lockAtMostFor() default "";
+ * }
+ * 
+ * ============================================
+ * 2. 工作原理
+ * ============================================
+ * 
+ * 2.1 AOP 拦截机制
+ * - 使用 Spring AOP 拦截带有 @SchedulerLock 注解的方法
+ * - 拦截器：ScheduledLockConfigurationSelector 注册 SchedulerLockConfiguration
+ * - 核心类：MethodInterceptor 实现类拦截方法调用
+ * 
+ * 2.2 锁获取流程
+ * 步骤1：方法执行前，尝试获取锁
+ *   - 计算 lockUntil = now + lockAtMostFor
+ *   - 执行 SQL: UPDATE shedlock SET lock_until=?, locked_at=?, locked_by=? 
+ *              WHERE name=? AND lock_until <= ?
+ *   - 如果更新成功（影响行数>0），获取锁成功
+ *   - 如果更新失败，说明其他实例持有锁，当前实例跳过执行
+ * 
+ * 步骤2：执行业务方法
+ *   - 只有获取锁成功的实例才会执行
+ * 
+ * 步骤3：方法执行后，释放锁
+ *   - 计算实际释放时间 = max(now + lockAtLeastFor, now)
+ *   - 执行 SQL: UPDATE shedlock SET lock_until=? WHERE name=?
+ *   - 确保锁至少持有 lockAtLeastFor 时间
+ * 
+ * 2.3 数据库表结构
+ * CREATE TABLE shedlock (
+ *   name VARCHAR(64) PRIMARY KEY,        -- 锁名称
+ *   lock_until TIMESTAMP(3),             -- 锁过期时间
+ *   locked_at TIMESTAMP(3),              -- 锁获取时间
+ *   locked_by VARCHAR(255)               -- 锁持有者（主机名）
+ * )
+ * 
+ * ============================================
+ * 3. 参数详解（以当前配置为例）
+ * ============================================
+ * 
+ * @SchedulerLock(
+ *   name = "TaskSchedulerManager_scheduledTask",
+ *   lockAtLeastFor = "PT2M",  // 2分钟
+ *   lockAtMostFor = "PT4M"    // 4分钟
+ * )
+ * 
+ * 场景分析：
+ * 
+ * 场景1：任务正常执行（耗时30秒）
+ * - 10:00:00 获取锁，lock_until = 10:04:00（now + 4分钟）
+ * - 10:00:30 任务执行完成
+ * - 10:02:00 释放锁，lock_until = 10:02:00（now + 2分钟，保证最少锁定2分钟）
+ * - 结果：锁实际持有2分钟，防止任务频繁执行
+ * 
+ * 场景2：任务执行时间长（耗时3分钟）
+ * - 10:00:00 获取锁，lock_until = 10:04:00
+ * - 10:03:00 任务执行完成
+ * - 10:03:00 释放锁，lock_until = 10:03:00（任务执行时间已超过lockAtLeastFor）
+ * - 结果：锁持有3分钟
+ * 
+ * 场景3：节点崩溃
+ * - 10:00:00 节点A获取锁，lock_until = 10:04:00
+ * - 10:01:00 节点A崩溃，无法释放锁
+ * - 10:04:00 锁自动过期
+ * - 10:04:01 节点B可以获取锁并执行任务
+ * - 结果：最多4分钟后其他节点可接管任务
+ * 
+ * ============================================
+ * 4. 核心类说明
+ * ============================================
+ * 
+ * 4.1 LockProvider 接口（shedlock-core）
+ * - lock(LockConfiguration lockConfiguration)：尝试获取锁
+ * - 返回 Optional<SimpleLock>，成功返回锁对象，失败返回 empty
+ * 
+ * 4.2 JdbcTemplateLockProvider（shedlock-provider-jdbc-template）
+ * - 实现 LockProvider 接口
+ * - 使用 JdbcTemplate 操作数据库
+ * - 核心SQL：
+ *   获取锁：UPDATE shedlock SET lock_until=?, locked_at=?, locked_by=? 
+ *          WHERE name=? AND lock_until <= ?
+ *   释放锁：UPDATE shedlock SET lock_until=? WHERE name=?
+ * 
+ * 4.3 DefaultLockingTaskExecutor（shedlock-core）
+ * - 执行带锁的任务
+ * - 协调锁的获取、任务执行、锁的释放
+ * 
+ * 4.4 ScheduledLockConfiguration（shedlock-spring）
+ * - 配置 Spring AOP 切面
+ * - 注册 BeanPostProcessor 处理 @SchedulerLock 注解
+ * 
+ * ============================================
+ * 5. 时间格式说明（ISO-8601 Duration）
+ * ============================================
+ * 
+ * PT2M  = 2分钟
+ * PT4M  = 4分钟
+ * PT30S = 30秒
+ * PT1H  = 1小时
+ * PT1H30M = 1小时30分钟
+ * 
+ * 格式：P[n]Y[n]M[n]DT[n]H[n]M[n]S
+ * - P：Period 标识
+ * - T：Time 标识（时间部分开始）
+ * - Y：年，M：月，D：日，H：小时，M：分钟，S：秒
+ * 
+ * ============================================
+ * 6. 最佳实践
+ * ============================================
+ * 
+ * 1. lockAtMostFor 应该大于任务最长执行时间
+ *    - 避免任务还在执行时锁就被释放
+ *    - 建议：lockAtMostFor = 任务最长执行时间 * 1.5
+ * 
+ * 2. lockAtLeastFor 应该小于任务调度间隔
+ *    - 避免任务无法按时执行
+ *    - 建议：lockAtLeastFor < 调度间隔
+ * 
+ * 3. name 命名规范
+ *    - 使用 "类名_方法名" 格式
+ *    - 确保全局唯一
+ * 
+ * 4. 数据库索引
+ *    - name 字段已是主键，自动有索引
+ *    - 可考虑在 lock_until 字段添加索引优化查询
+ * 
+ * ============================================
+ * 7. 当前配置分析
+ * ============================================
+ * 
+ * @Scheduled(cron = "0 0/5 * * * ?")  // 每5分钟执行
+ * @SchedulerLock(
+ *   name = "TaskSchedulerManager_scheduledTask",
+ *   lockAtLeastFor = "PT2M",  // 最少锁定2分钟
+ *   lockAtMostFor = "PT4M"    // 最多锁定4分钟
+ * )
+ * 
+ * 配置合理性：
+ * ✓ lockAtMostFor(4分钟) < 调度间隔(5分钟)：合理
+ * ✓ lockAtLeastFor(2分钟) < 调度间隔(5分钟)：合理
+ * ✓ lockAtLeastFor(2分钟) < lockAtMostFor(4分钟)：合理
+ * 
+ * 预期行为：
+ * - 任务每5分钟触发一次
+ * - 只有一个实例能获取锁并执行
+ * - 任务执行完后，锁至少保持2分钟
+ * - 如果节点崩溃，最多4分钟后其他节点可接管
+ */
