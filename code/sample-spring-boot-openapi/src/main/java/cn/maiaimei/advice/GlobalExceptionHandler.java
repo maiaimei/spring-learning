@@ -1,0 +1,25 @@
+package cn.maiaimei.advice;
+
+import cn.maiaimei.model.Result;
+import io.swagger.v3.oas.annotations.Hidden;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+@Hidden // 隐藏异常处理器，不在OpenAPI文档中显示
+public class GlobalExceptionHandler {
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
+    return Result.error(400, e.getMessage());
+  }
+
+  @ExceptionHandler(Exception.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  public Result<Void> handleException(Exception e) {
+    return Result.error(500, "服务器内部错误");
+  }
+}
