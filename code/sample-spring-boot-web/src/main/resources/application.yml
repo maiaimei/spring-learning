@@ -1,3 +1,7 @@
 logging:
   level:
+    org.springframework.web: debug
     org.springframework.web.filter: debug
+  file:
+    name: sample-spring-boot-web.log
+    path: E:\code\log
