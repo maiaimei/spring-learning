@@ -3,6 +3,7 @@ package cn.maiaimei.config;
 import cn.maiaimei.filter.RequestLoggingFilter;
 import cn.maiaimei.filter.TraceIdFilter;
 import cn.maiaimei.filter.constants.FilterConstants;
+import cn.maiaimei.filter.properties.RequestLoggingFilterProperties;
 import cn.maiaimei.filter.properties.TraceIdFilterProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -22,7 +23,8 @@ public class FilterAutoConfiguration {
     return filterRegistrationBean;
   }
 
-  //@Bean
+  @Bean
+  @ConditionalOnProperty(name = FilterConstants.REQUEST_LOGGING_FILTER_ENABLED, matchIfMissing = false)
   public FilterRegistrationBean<CommonsRequestLoggingFilter> commonsRequestLoggingFilterRegistrationBean() {
     FilterRegistrationBean<CommonsRequestLoggingFilter> filterRegistrationBean = new FilterRegistrationBean<>();
     CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
@@ -36,9 +38,10 @@ public class FilterAutoConfiguration {
   }
 
   @Bean
-  public FilterRegistrationBean<RequestLoggingFilter> requestLoggingFilterRegistrationBean() {
+  @ConditionalOnProperty(name = FilterConstants.REQUEST_LOGGING_FILTER_ENABLED, matchIfMissing = true)
+  public FilterRegistrationBean<RequestLoggingFilter> requestLoggingFilterRegistrationBean(RequestLoggingFilterProperties requestLoggingFilterProperties) {
     FilterRegistrationBean<RequestLoggingFilter> filterRegistrationBean = new FilterRegistrationBean<>();
-    RequestLoggingFilter filter = new RequestLoggingFilter();
+    RequestLoggingFilter filter = new RequestLoggingFilter(requestLoggingFilterProperties);
     filterRegistrationBean.setFilter(filter);
     filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
     return filterRegistrationBean;

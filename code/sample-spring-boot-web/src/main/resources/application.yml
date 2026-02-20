@@ -14,3 +14,7 @@ app:
       enabled: true
       exclude-patterns:
         - /health-check
+    request-logging:
+      enabled: true
+      exclude-patterns:
+        - /health-check

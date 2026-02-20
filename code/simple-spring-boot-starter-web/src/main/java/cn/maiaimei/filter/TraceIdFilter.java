@@ -24,13 +24,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class TraceIdFilter extends OncePerRequestFilter {
 
   /**
-   * Configurable filter for excluding certain requests from being processed by
-   * this filter
+   * Configurable filter for excluding certain requests from being processed by this filter
    */
   private final ConfigurableFilter configurableFilter;
 
   /**
-   * Constructs an AddTraceIdFilter with exclude patterns.
+   * Constructs an TraceIdFilter with exclude patterns.
    *
    * @param traceIdFilterProperties the properties for configuring the filter
    */
