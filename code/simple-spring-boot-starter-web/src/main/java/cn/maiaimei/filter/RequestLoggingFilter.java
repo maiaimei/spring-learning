@@ -3,6 +3,8 @@ package cn.maiaimei.filter;
 import cn.maiaimei.filter.model.ContentCachedRequestWrapper;
 import cn.maiaimei.filter.properties.RequestLoggingFilterProperties;
 import cn.maiaimei.utils.CollectionUtilsPlus;
+import cn.maiaimei.utils.ServletUtils;
+import cn.maiaimei.utils.StringUtilsPlus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,10 +12,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
 public class RequestLoggingFilter extends OncePerRequestFilter {
@@ -77,10 +82,13 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
   private void logRequest(ContentCachedRequestWrapper request) {
     Map<String, Object> requestData = new HashMap<>();
     requestData.put("method", request.getMethod());
-    requestData.put("uri", request.getRequestURI());
+    requestData.put("uri", ServletUtils.getRequestPath(request));
 
-    if (requestLoggingFilterProperties.isIncludeQueryString() && request.getQueryString() != null) {
-      requestData.put("queryString", request.getQueryString());
+    if (requestLoggingFilterProperties.isIncludeQueryString() && Objects.nonNull(request.getQueryString())) {
+      MultiValueMap<String, String> queryParams = UriComponentsBuilder.fromUriString("?" + request.getQueryString())
+          .build()
+          .getQueryParams();
+      requestData.put("queryString", queryParams);
     }
 
     if (requestLoggingFilterProperties.isIncludeClientInfo()) {
@@ -89,9 +97,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
     if (requestLoggingFilterProperties.isIncludeHeaders()) {
       Map<String, String> headers = new HashMap<>();
-      request.getHeaderNames().asIterator().forEachRemaining(name ->
-          headers.put(name, request.getHeader(name))
-      );
+      request.getHeaderNames().asIterator().forEachRemaining(name -> headers.put(name, request.getHeader(name)));
       requestData.put("headers", headers);
     }
 
@@ -108,12 +114,12 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
   private void logResponse(ContentCachingResponseWrapper response, long duration) {
     Map<String, Object> responseData = new HashMap<>();
     responseData.put("status", response.getStatus());
-    responseData.put("duration", duration);
+    responseData.put("duration", duration + "ms");
 
     if (requestLoggingFilterProperties.isIncludePayload()) {
       byte[] content = response.getContentAsByteArray();
       if (content.length > 0) {
-        responseData.put("payload", new String(content, response.getCharacterEncoding()));
+        responseData.put("payload", StringUtilsPlus.toString(content, response.getCharacterEncoding()));
       }
     }
 

@@ -1,5 +1,6 @@
 package cn.maiaimei.utils;
 
+import java.nio.charset.Charset;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.StringUtils;
 
@@ -26,4 +27,14 @@ public final class StringUtilsPlus {
     return !StringUtils.hasLength(str);
   }
 
+  /**
+   * Converts byte array to string using the specified charset.
+   *
+   * @param bytes the byte array to convert
+   * @param charset the charset name
+   * @return the string representation
+   */
+  public static String toString(byte[] bytes, String charset) {
+    return new String(bytes, Charset.forName(charset));
+  }
 }

@@ -15,7 +15,7 @@ public class FilterAutoConfiguration {
 
   @Bean
   @ConditionalOnProperty(name = FilterConstants.TRACE_ID_FILTER_ENABLED, matchIfMissing = true)
-  public FilterRegistrationBean<TraceIdFilter> addTraceIdFilterRegistrationBean(TraceIdFilterProperties traceIdFilterProperties) {
+  public FilterRegistrationBean<TraceIdFilter> traceIdFilterRegistrationBean(TraceIdFilterProperties traceIdFilterProperties) {
     FilterRegistrationBean<TraceIdFilter> filterRegistrationBean = new FilterRegistrationBean<>();
     TraceIdFilter filter = new TraceIdFilter(traceIdFilterProperties);
     filterRegistrationBean.setFilter(filter);
@@ -24,7 +24,7 @@ public class FilterAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnProperty(name = FilterConstants.REQUEST_LOGGING_FILTER_ENABLED, matchIfMissing = false)
+  @ConditionalOnProperty(name = FilterConstants.REQUEST_LOGGING_FILTER_ENABLED)
   public FilterRegistrationBean<CommonsRequestLoggingFilter> commonsRequestLoggingFilterRegistrationBean() {
     FilterRegistrationBean<CommonsRequestLoggingFilter> filterRegistrationBean = new FilterRegistrationBean<>();
     CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
