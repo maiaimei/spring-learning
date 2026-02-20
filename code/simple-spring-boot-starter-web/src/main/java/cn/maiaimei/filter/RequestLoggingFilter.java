@@ -10,9 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.util.MultiValueMap;
@@ -80,7 +78,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
   }
 
   private void logRequest(ContentCachedRequestWrapper request) {
-    Map<String, Object> requestData = new HashMap<>();
+    Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("method", request.getMethod());
     requestData.put("uri", ServletUtils.getRequestPath(request));
 
@@ -112,7 +110,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
   }
 
   private void logResponse(ContentCachingResponseWrapper response, long duration) {
-    Map<String, Object> responseData = new HashMap<>();
+    Map<String, Object> responseData = new LinkedHashMap<>();
     responseData.put("status", response.getStatus());
     responseData.put("duration", duration + "ms");
 

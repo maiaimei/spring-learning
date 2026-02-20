@@ -16,5 +16,9 @@ app:
         - /health-check
     request-logging:
       enabled: true
+      include-query-string: true
+      include-client-info: true
+      include-headers: true
+      include-payload: true
       exclude-patterns:
         - /health-check

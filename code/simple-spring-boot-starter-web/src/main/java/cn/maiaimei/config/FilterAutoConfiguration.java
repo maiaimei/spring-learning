@@ -23,8 +23,7 @@ public class FilterAutoConfiguration {
     return filterRegistrationBean;
   }
 
-  @Bean
-  @ConditionalOnProperty(name = FilterConstants.REQUEST_LOGGING_FILTER_ENABLED)
+  //@Bean
   public FilterRegistrationBean<CommonsRequestLoggingFilter> commonsRequestLoggingFilterRegistrationBean() {
     FilterRegistrationBean<CommonsRequestLoggingFilter> filterRegistrationBean = new FilterRegistrationBean<>();
     CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
