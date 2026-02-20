@@ -1,1 +1,2 @@
 cn.maiaimei.config.FilterAutoConfiguration
+cn.maiaimei.config.JacksonAutoConfiguration

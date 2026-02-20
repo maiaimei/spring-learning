@@ -10,7 +10,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.util.MultiValueMap;
@@ -94,7 +96,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     }
 
     if (requestLoggingFilterProperties.isIncludeHeaders()) {
-      Map<String, String> headers = new HashMap<>();
+      Map<String, String> headers = new LinkedHashMap<>();
       request.getHeaderNames().asIterator().forEachRemaining(name -> headers.put(name, request.getHeader(name)));
       requestData.put("headers", headers);
     }
