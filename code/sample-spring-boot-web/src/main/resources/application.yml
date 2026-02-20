@@ -1,7 +1,9 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api # Context path of the application.
+
 logging:
-  level:
+  level: # Log levels severity mapping. For instance, `logging.level.org.springframework=DEBUG`.
     org.springframework.web: debug
     org.springframework.web.filter: debug
-  file:
-    name: sample-spring-boot-web.log
-    path: E:\code\log

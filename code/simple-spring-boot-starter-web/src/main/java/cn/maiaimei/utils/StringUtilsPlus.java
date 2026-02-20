@@ -5,8 +5,15 @@ import org.springframework.util.StringUtils;
 
 /**
  * Utility class for {@link CharSequence} operations.
+ * Complements Spring's {@link StringUtils} with additional methods.
  */
-public final class CharSequenceUtils {
+public final class StringUtilsPlus {
+
+  /**
+   * Private constructor to prevent instantiation.
+   */
+  private StringUtilsPlus() {
+  }
 
   /**
    * Check whether the given {@code CharSequence} is empty.
@@ -19,9 +26,4 @@ public final class CharSequenceUtils {
     return !StringUtils.hasLength(str);
   }
 
-  /**
-   * Private constructor to prevent instantiation.
-   */
-  private CharSequenceUtils() {
-  }
 }

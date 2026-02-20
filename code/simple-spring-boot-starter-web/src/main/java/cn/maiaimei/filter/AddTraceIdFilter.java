@@ -2,8 +2,8 @@ package cn.maiaimei.filter;
 
 import static cn.maiaimei.constants.AppConstants.TRACE_ID_HEADER;
 
-import cn.maiaimei.utils.CharSequenceUtils;
 import cn.maiaimei.utils.MdcUtils;
+import cn.maiaimei.utils.StringUtilsPlus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,7 +28,7 @@ public class AddTraceIdFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
     try {
       String traceId = request.getHeader(TRACE_ID_HEADER);
-      if (CharSequenceUtils.isEmpty(traceId)) {
+      if (StringUtilsPlus.isEmpty(traceId)) {
         traceId = UUID.randomUUID().toString();
       }
       request.setAttribute(TRACE_ID_HEADER, traceId);
