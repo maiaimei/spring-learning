@@ -7,3 +7,10 @@ logging:
   level: # Log levels severity mapping. For instance, `logging.level.org.springframework=DEBUG`.
     org.springframework.web: debug
     org.springframework.web.filter: debug
+
+app:
+  filter:
+    trace-id:
+      enabled: true
+      exclude-patterns:
+        - /health-check

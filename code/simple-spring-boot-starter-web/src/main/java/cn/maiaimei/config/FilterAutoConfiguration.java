@@ -1,7 +1,10 @@
 package cn.maiaimei.config;
 
-import cn.maiaimei.filter.AddTraceIdFilter;
 import cn.maiaimei.filter.RequestLoggingFilter;
+import cn.maiaimei.filter.TraceIdFilter;
+import cn.maiaimei.filter.constants.FilterConstants;
+import cn.maiaimei.filter.properties.TraceIdFilterProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
@@ -10,9 +13,10 @@ import org.springframework.web.filter.CommonsRequestLoggingFilter;
 public class FilterAutoConfiguration {
 
   @Bean
-  public FilterRegistrationBean<AddTraceIdFilter> addTraceIdFilterRegistrationBean() {
-    FilterRegistrationBean<AddTraceIdFilter> filterRegistrationBean = new FilterRegistrationBean<>();
-    AddTraceIdFilter filter = new AddTraceIdFilter();
+  @ConditionalOnProperty(name = FilterConstants.TRACE_ID_FILTER_ENABLED, matchIfMissing = true)
+  public FilterRegistrationBean<TraceIdFilter> addTraceIdFilterRegistrationBean(TraceIdFilterProperties traceIdFilterProperties) {
+    FilterRegistrationBean<TraceIdFilter> filterRegistrationBean = new FilterRegistrationBean<>();
+    TraceIdFilter filter = new TraceIdFilter(traceIdFilterProperties);
     filterRegistrationBean.setFilter(filter);
     filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
     return filterRegistrationBean;

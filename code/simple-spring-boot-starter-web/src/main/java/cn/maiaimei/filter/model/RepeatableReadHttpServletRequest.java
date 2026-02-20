@@ -1,4 +1,4 @@
-package cn.maiaimei.filter;
+package cn.maiaimei.filter.model;
 
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;

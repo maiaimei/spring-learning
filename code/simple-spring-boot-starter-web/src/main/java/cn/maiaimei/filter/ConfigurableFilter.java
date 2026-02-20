@@ -1,6 +1,7 @@
 package cn.maiaimei.filter;
 
 import cn.maiaimei.utils.CollectionUtilsPlus;
+import cn.maiaimei.utils.ServletUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.Setter;
@@ -60,7 +61,7 @@ public class ConfigurableFilter {
    * @return {@code true} if the filter should not be applied
    */
   public boolean shouldNotFilter(HttpServletRequest request) {
-    String requestPath = request.getRequestURI();
+    String requestPath = ServletUtils.getRequestPath(request);
 
     if (CollectionUtilsPlus.isNotEmpty(excludePatterns)) {
       for (String pattern : excludePatterns) {
