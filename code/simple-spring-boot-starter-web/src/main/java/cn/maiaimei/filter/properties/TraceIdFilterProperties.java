@@ -13,5 +13,6 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = FilterConstants.TRACE_ID_FILTER_ENABLED, matchIfMissing = true)
 public class TraceIdFilterProperties {
 
+  private boolean enabled = true;
   private List<String> excludePatterns;
 }
