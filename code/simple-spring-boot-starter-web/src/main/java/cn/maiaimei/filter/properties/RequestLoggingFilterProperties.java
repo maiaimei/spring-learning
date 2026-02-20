@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * Properties for RequestLoggingFilter.
+ * Configuration properties for RequestLoggingFilter.
  */
 @Data
 @Component
@@ -17,20 +17,44 @@ import org.springframework.stereotype.Component;
 public class RequestLoggingFilterProperties {
 
   /**
-   * Whether to enable the RequestLoggingFilter. Default is true.
+   * Whether to enable the RequestLoggingFilter.
+   * <p>
+   * Default is true.
    */
   private boolean enabled = true;
 
+  /**
+   * Whether to include query string in the log.
+   * <p>
+   * Default is false.
+   */
   private boolean includeQueryString = false;
 
+  /**
+   * Whether to include client IP address in the log.
+   * <p>
+   * Default is false.
+   */
   private boolean includeClientInfo = false;
 
+  /**
+   * Whether to include request headers in the log.
+   * <p>
+   * Default is false.
+   */
   private boolean includeHeaders = false;
 
+  /**
+   * Whether to include request and response payload in the log.
+   * <p>
+   * Default is false.
+   */
   private boolean includePayload = false;
 
   /**
-   * The patterns to exclude from the RequestLoggingFilter.
+   * URL patterns to exclude from logging.
+   * <p>
+   * Supports Ant-style path patterns (e.g., /actuator/**, /health).
    */
   private List<String> excludePatterns;
 }

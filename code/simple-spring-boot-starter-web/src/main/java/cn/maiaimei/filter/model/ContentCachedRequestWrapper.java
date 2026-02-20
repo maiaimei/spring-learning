@@ -6,7 +6,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import lombok.Getter;
 
+@Getter
 public class ContentCachedRequestWrapper extends HttpServletRequestWrapper {
 
   private final byte[] cachedBody;
@@ -24,10 +26,6 @@ public class ContentCachedRequestWrapper extends HttpServletRequestWrapper {
   @Override
   public BufferedReader getReader() {
     return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(cachedBody), StandardCharsets.UTF_8));
-  }
-
-  public byte[] getCachedBody() {
-    return cachedBody;
   }
 
   public String getBodyAsString() {

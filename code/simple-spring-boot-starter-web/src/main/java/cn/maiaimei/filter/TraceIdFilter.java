@@ -53,8 +53,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
   }
 
   /**
-   * Processes the request by adding trace ID to request attribute, response
-   * header and MDC.
+   * Processes the request by adding trace ID to request attribute, response header and MDC.
    * Clears MDC after request processing.
    */
   @Override

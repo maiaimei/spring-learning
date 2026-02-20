@@ -18,8 +18,16 @@ import tools.jackson.databind.*;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
+/**
+ * Auto-configuration for Jackson JSON serialization and deserialization.
+ */
 public class JacksonAutoConfiguration {
 
+  /**
+   * Creates and configures the JsonMapper bean.
+   *
+   * @return configured JsonMapper instance
+   */
   @Bean
   @Primary
   public JsonMapper jsonMapper() {
@@ -48,6 +56,9 @@ public class JacksonAutoConfiguration {
         .build();
   }
 
+  /**
+   * Serializes BigDecimal as string to avoid precision loss in JSON.
+   */
   static class BigDecimalSerializer extends ValueSerializer<BigDecimal> {
 
     @Override
@@ -56,6 +67,9 @@ public class JacksonAutoConfiguration {
     }
   }
 
+  /**
+   * Deserializes string to BigDecimal.
+   */
   static class BigDecimalDeserializer extends ValueDeserializer<BigDecimal> {
 
     @Override
@@ -64,6 +78,9 @@ public class JacksonAutoConfiguration {
     }
   }
 
+  /**
+   * Serializes LocalDateTime to string in yyyy-MM-dd'T'HH:mm:ss.SSS'Z' format.
+   */
   static class LocalDateTimeSerializer extends ValueSerializer<LocalDateTime> {
 
     @Override
@@ -72,6 +89,9 @@ public class JacksonAutoConfiguration {
     }
   }
 
+  /**
+   * Deserializes string to LocalDateTime from yyyy-MM-dd'T'HH:mm:ss.SSS'Z' format.
+   */
   static class LocalDateTimeDeserializer extends ValueDeserializer<LocalDateTime> {
 
     @Override
@@ -80,6 +100,9 @@ public class JacksonAutoConfiguration {
     }
   }
 
+  /**
+   * Serializes LocalDate to string in yyyy-MM-dd format.
+   */
   static class LocalDateSerializer extends ValueSerializer<LocalDate> {
 
     @Override
@@ -88,6 +111,9 @@ public class JacksonAutoConfiguration {
     }
   }
 
+  /**
+   * Deserializes string to LocalDate from yyyy-MM-dd format.
+   */
   static class LocalDateDeserializer extends ValueDeserializer<LocalDate> {
 
     @Override
@@ -96,6 +122,9 @@ public class JacksonAutoConfiguration {
     }
   }
 
+  /**
+   * Serializes LocalTime to string in HH:mm:ss format.
+   */
   static class LocalTimeSerializer extends ValueSerializer<LocalTime> {
 
     @Override
@@ -104,6 +133,9 @@ public class JacksonAutoConfiguration {
     }
   }
 
+  /**
+   * Deserializes string to LocalTime from HH:mm:ss format.
+   */
   static class LocalTimeDeserializer extends ValueDeserializer<LocalTime> {
 
     @Override
